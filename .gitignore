@@ -3,3 +3,8 @@
 /Debug/
 /monkeypreter/x64/
 /monkeypreter/Debug/
+/monkeypreter.sln.DotSettings.user
+
+/monkeypreter_test/x64/
+/monkeypreter_test/packages.config
+/packages/
