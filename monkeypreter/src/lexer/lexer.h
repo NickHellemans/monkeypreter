@@ -60,3 +60,4 @@ void readIdentifier(Lexer* lexer, Token* token);
 bool isLetter(char ch);
 static void getIdentType(Token* t);
 void readNumber(Lexer* lexer, Token* token);
+char peekChar(const Lexer* lexer);

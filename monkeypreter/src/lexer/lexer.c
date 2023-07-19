@@ -29,7 +29,55 @@ Token nextToken(Lexer* lexer) {
 	switch (lexer->ch)
 	{
 		case '=':
-			token.type = TokenTypeAssign;
+			if(peekChar(lexer) == '=') {
+				token.type = TokenTypeEqual;
+				token.literal[0] = lexer->ch;
+				readChar(lexer);
+				token.literal[1] = lexer->ch;
+				token.literal[2] = '\0';
+			}
+			else {
+				token.type = TokenTypeAssign;
+				token.literal[0] = lexer->ch;
+				token.literal[1] = '\0';
+			}
+			break;
+		case '-':
+			token.type = TokenTypeMinus;
+			token.literal[0] = lexer->ch;
+			token.literal[1] = '\0';
+			break;
+		case '!':
+			if(peekChar(lexer) == '=') {
+				token.type = TokenTypeNotEqual;
+				token.literal[0] = lexer->ch;
+				readChar(lexer);
+				token.literal[1] = lexer->ch;
+				token.literal[2] = '\0';
+			}
+			else {
+				token.type = TokenTypeBang;
+				token.literal[0] = lexer->ch;
+				token.literal[1] = '\0';
+			}
+			break;
+		case '/':
+			token.type = TokenTypeSlash;
+			token.literal[0] = lexer->ch;
+			token.literal[1] = '\0';
+			break;
+		case '*':
+			token.type = TokenTypeAsterisk;
+			token.literal[0] = lexer->ch;
+			token.literal[1] = '\0';
+			break;
+		case '<':
+			token.type = TokenTypeLT;
+			token.literal[0] = lexer->ch;
+			token.literal[1] = '\0';
+			break;
+		case '>':
+			token.type = TokenTypeGT;
 			token.literal[0] = lexer->ch;
 			token.literal[1] = '\0';
 			break;
@@ -156,8 +204,31 @@ static void getIdentType(Token* t) {
 	else if (strcmp(t->literal, "fn") == 0) {
 		t->type = TokenTypeFunction;
 	}
+	else if (strcmp(t->literal, "true") == 0) {
+		t->type = TokenTypeTrue;
+	}
+	else if (strcmp(t->literal, "false") == 0) {
+		t->type = TokenTypeFalse;
+	}
+	else if (strcmp(t->literal, "if") == 0) {
+		t->type = TokenTypeIf;
+	}
+	else if (strcmp(t->literal, "else") == 0) {
+		t->type = TokenTypeElse;
+	}
+	else if (strcmp(t->literal, "return") == 0) {
+		t->type = TokenTypeReturn;
+	}
 	else
 	{
 		t->type = TokenTypeIdent;
 	}
+}
+
+char peekChar(const Lexer* lexer) {
+
+	if(lexer->readPosition >= lexer->inputLength)
+		return 0;
+
+	return lexer->input[lexer->readPosition];
 }
