@@ -1,0 +1,60 @@
+#pragma once
+
+#include <stdlib.h>
+#include <stdbool.h>
+
+#define MAX_IDENT_LENGTH 64
+
+typedef enum
+{
+	TokenTypeIllegal,
+	TokenTypeEof,
+	TokenTypeIdent,
+	TokenTypeInt,
+	TokenTypeAssign,
+	TokenTypePlus,
+	TokenTypeMinus,
+	TokenTypeBang,
+	TokenTypeAsterisk,
+	TokenTypeSlash,
+	TokenTypeLT,
+	TokenTypeGT,
+	TokenTypeEqual,
+	TokenTypeNotEqual,
+	TokenTypeComma,
+	TokenTypeSemicolon,
+	TokenTypeLParen,
+	TokenTypeRParen,
+	TokenTypeLSquirly,
+	TokenTypeRSquirly,
+	TokenTypeFunction,
+	TokenTypeLet,
+	TokenTypeTrue,
+	TokenTypeFalse,
+	TokenTypeIf,
+	TokenTypeElse,
+	TokenTypeReturn,
+} TokenType;
+
+typedef struct Token
+{
+	TokenType type;
+	char literal[MAX_IDENT_LENGTH];
+} Token;
+
+//Token* tokenCreate(TokenType type, char* literal);
+//void tokenCleanUp(Token** token);
+
+typedef struct Lexer {
+	const char* input;
+	size_t inputLength;
+	int position; //current position (points to current char)
+	size_t readPosition; //current reading position 
+	char ch; //current char
+} Lexer;
+
+Lexer createLexer(const char* input);
+Token nextToken(Lexer* lexer);
+void readChar(Lexer* lexer);
+void readIdentifier(Lexer* lexer, Token* token);
+bool isLetter(char ch);
