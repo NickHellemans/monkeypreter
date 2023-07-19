@@ -10,10 +10,21 @@ Lexer createLexer(const char* input)
 	return l;
 }
 
+void skipWhiteSpace(Lexer* lexer) {
+	char ch = lexer->ch;
+	while(ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r')
+	{
+		readChar(lexer);
+		ch = lexer->ch;
+	}
+}
+
 Token nextToken(Lexer* lexer) {
 	Token token;
 	token.type = TokenTypeIllegal;
 	token.literal[0] = '\0';
+
+	skipWhiteSpace(lexer);
 
 	switch (lexer->ch)
 	{
@@ -64,9 +75,14 @@ Token nextToken(Lexer* lexer) {
 			break;
 
 		default:
-			if(isalpha(lexer->ch))
+			if(isLetter(lexer->ch))
 			{
 				readIdentifier(lexer, &token);
+				return token;
+			}
+
+			if (isdigit(lexer->ch)) {
+				readNumber(lexer, &token);
 				return token;
 			}
 			else
@@ -98,17 +114,50 @@ void readChar(Lexer* lexer)
 
 //Fill literal in token
 void readIdentifier(Lexer* lexer, Token* token) {
+	//Set literal
 	size_t i = 0;
-	while(isLetter(lexer->ch))
+	while(isLetter(lexer->ch) && i < MAX_IDENT_LENGTH - 1)
 	{
 		token->literal[i] = lexer->ch;
 		i++;
 		readChar(lexer);
 	}
 	token->literal[i] = '\0';
-	token->type = TokenTypeIdent;
+	//Sets type
+	getIdentType(token);
+}
+
+//Fill literal in token number
+void readNumber(Lexer* lexer, Token* token) {
+	//Set literal
+	size_t i = 0;
+	while (isdigit(lexer->ch) && i < MAX_IDENT_LENGTH - 1)
+	{
+		token->literal[i] = lexer->ch;
+		i++;
+		readChar(lexer);
+	}
+	token->literal[i] = '\0';
+
+	//Sets type
+	token->type = TokenTypeInt;
 }
 
 bool isLetter(const char ch) {
 	return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch == '_');
+}
+
+//Get type based on literal
+static void getIdentType(Token* t) {
+
+	if (strcmp(t->literal, "let") == 0) {
+		t->type = TokenTypeLet;
+	}
+	else if (strcmp(t->literal, "fn") == 0) {
+		t->type = TokenTypeFunction;
+	}
+	else
+	{
+		t->type = TokenTypeIdent;
+	}
 }

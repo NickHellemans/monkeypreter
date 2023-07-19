@@ -10,7 +10,7 @@ TEST(TestLexer, TestNextToken_01)
 	const char* input = "=+(){},;";
 	Lexer lexer = createLexer(input);
 
-	Token expectedTokens[9]{
+	constexpr Token expectedTokens[]{
 		{TokenTypeAssign, "="},
 		{TokenTypePlus, "+"},
 		{TokenTypeLParen, "("},
@@ -22,9 +22,7 @@ TEST(TestLexer, TestNextToken_01)
 		{TokenTypeEof,  ""},
 	};
 
-	int expectedLength = 9;
-
-
+	constexpr int expectedLength = 9;
 
 	for (int i = 0; i < expectedLength; i++) {
 		Token token = nextToken(&lexer);
@@ -42,7 +40,7 @@ TEST(TestLexer, TestNextToken_02)
 
 	Lexer lexer = createLexer(input);
 
-	const Token expectedTokens[]{
+	constexpr Token expectedTokens[]{
 		{TokenTypeLet, "let"},
 		{TokenTypeIdent,  "five" },
 		{TokenTypeAssign,  "=" },
@@ -51,7 +49,6 @@ TEST(TestLexer, TestNextToken_02)
 		{TokenTypeLet,  "let" },
 		{TokenTypeIdent,  "ten" },
 		{TokenTypeAssign,  "=" },
-		{TokenTypeInt,  "10" },
 		{TokenTypeInt,  "10" },
 		{TokenTypeSemicolon,  ";" },
 		{TokenTypeLet,  "let" },
@@ -62,13 +59,11 @@ TEST(TestLexer, TestNextToken_02)
 		{TokenTypeIdent,  "x" },
 		{TokenTypeComma,  "," },
 		{TokenTypeIdent,  "y" },
-		{TokenTypeRParen,  " " },
+		{TokenTypeRParen,  ")" },
 		{TokenTypeLSquirly,  "{" },
 		{TokenTypeIdent,  "x" },
 		{TokenTypePlus,  "+" },
 		{TokenTypeIdent,  "y" },
-		{TokenTypeSemicolon,  ";" },
-		{TokenTypeRSquirly,  "}" },
 		{TokenTypeSemicolon,  ";" },
 		{TokenTypeRSquirly,  "}" },
 		{TokenTypeSemicolon,  ";" },
@@ -80,17 +75,23 @@ TEST(TestLexer, TestNextToken_02)
 		{TokenTypeIdent,  "five" },
 		{TokenTypeComma,  "," },
 		{TokenTypeIdent,  "ten" },
-		{TokenTypeRParen,  " " },
+		{TokenTypeRParen,  ")" },
 		{TokenTypeSemicolon,  ";" },
 		{TokenTypeEof, "" },
 	};
 
-	int expectedLength = sizeof(expectedTokens);
-
-
+	constexpr int expectedLength = sizeof(expectedTokens) / sizeof(expectedTokens[0]);
 
 	for (int i = 0; i < expectedLength; i++) {
 		Token token = nextToken(&lexer);
+		printf("Token: \n");
+		printf("\tliteral: %s\n", token.literal);
+		printf("\ttype: %d\n", token.type);
+
+		printf("Expected Token: \n");
+		printf("\tliteral: %s\n", expectedTokens[i].literal);
+		printf("\ttype: %d\n", expectedTokens[i].type);
+
 		ASSERT_EQ(token.type, expectedTokens[i].type);
 		ASSERT_STREQ(token.literal, expectedTokens[i].literal);
 	}

@@ -58,3 +58,5 @@ Token nextToken(Lexer* lexer);
 void readChar(Lexer* lexer);
 void readIdentifier(Lexer* lexer, Token* token);
 bool isLetter(char ch);
+static void getIdentType(Token* t);
+void readNumber(Lexer* lexer, Token* token);
