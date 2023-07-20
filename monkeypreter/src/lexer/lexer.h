@@ -11,6 +11,13 @@ typedef enum
 	TokenTypeEof,
 	TokenTypeIdent,
 	TokenTypeInt,
+	TokenTypeFunction,
+	TokenTypeLet,
+	TokenTypeTrue,
+	TokenTypeFalse,
+	TokenTypeIf,
+	TokenTypeElse,
+	TokenTypeReturn,
 	TokenTypeAssign,
 	TokenTypePlus,
 	TokenTypeMinus,
@@ -27,13 +34,6 @@ typedef enum
 	TokenTypeRParen,
 	TokenTypeLSquirly,
 	TokenTypeRSquirly,
-	TokenTypeFunction,
-	TokenTypeLet,
-	TokenTypeTrue,
-	TokenTypeFalse,
-	TokenTypeIf,
-	TokenTypeElse,
-	TokenTypeReturn,
 } TokenType;
 
 typedef struct Token
@@ -61,3 +61,4 @@ bool isLetter(char ch);
 static void getIdentType(Token* t);
 void readNumber(Lexer* lexer, Token* token);
 char peekChar(const Lexer* lexer);
+const char* tokenTypeToStr(TokenType type);

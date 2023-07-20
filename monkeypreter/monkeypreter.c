@@ -3,12 +3,12 @@
 
 
 #include <stdio.h>
-#include "src/lexer/lexer.h"
+#include "src/repl.h"
 
 int main(void)
 {
-    printf("Hello Monkeypreter!\n");
-
+    printf("Welcome to my Monkeypreter!\n");
+    repl();
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu

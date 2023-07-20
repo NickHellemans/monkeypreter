@@ -10,6 +10,18 @@ Lexer createLexer(const char* input)
 	return l;
 }
 
+const char* tokenTypeToStr(TokenType type) {
+	static const char* tokenNames[] = {
+		"ILLEGAL", "EOF", "IDENT", "INT", "FUNCTION", "LET", "TRUE",
+		"FALSE",   "IF",  "ELSE", "RETURN",	"=",  "+",   
+		"-", "!", "*",  "/",
+		"<",  ">",    "==",   "!=", ",",
+		";", "(", ")",  "{", "}", 
+		
+	};
+	return tokenNames[type];
+}
+
 void skipWhiteSpace(Lexer* lexer) {
 	char ch = lexer->ch;
 	while(ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r')
