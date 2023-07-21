@@ -50,3 +50,6 @@ typedef struct SProgram {
 	size_t size;
 } Program;
 
+
+char* programToStr(Program* program);
+void statementToStr(char* str, Statement* stmt); 

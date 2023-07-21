@@ -27,6 +27,9 @@
     <ClCompile Include="src\parser\parser.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\parser\ast.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lexer\lexer.h">

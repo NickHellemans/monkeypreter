@@ -86,6 +86,7 @@ Statement parseRetStatement(Parser* parser) {
 	stmt.token = parser->curToken;
 
 	setParserNextToken(parser);
+	stmt.expression.token = parser->curToken;
 
 	//Skip expr
 	while(!curTokenIs(parser, TokenTypeSemicolon)) {

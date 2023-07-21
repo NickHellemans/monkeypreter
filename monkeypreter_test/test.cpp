@@ -5,6 +5,8 @@ extern "C" {
 	#include "lexer/lexer.c"
 	#include "parser/parser.h"
 	#include "parser/parser.c"
+	#include "parser/ast.h"
+	#include "parser/ast.c"
 }
 
 TEST(TestLexer, TestNextToken_01)
@@ -307,6 +309,10 @@ TEST(TestParser, TestParser_02_ret)
 		printf("Program does not contain 3 statements, got %llu\n", program->size);
 		FAIL();
 	}
+
+	char* programStr = programToStr(program);
+	printf("%s", programStr);
+	free(programStr);
 
 	for (int i = 0; i < 3; i++) {
 		Statement stmt = program->statements[i];
