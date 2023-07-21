@@ -1,6 +1,16 @@
 #pragma once
 #include "../lexer/lexer.h"
 
+enum Precedence {
+    LOWEST = 1,
+    EQUALS,         // ==
+    LESSGREATER,    // < or >
+    SUM,            // - and +
+    PRODUCT,        // * and /
+    PREFIX,         // - or !x
+    CALL,           // fn()
+};
+
 enum ExpressionType {
     EXPR_INFIX = 1,
     EXPR_PREFIX,
@@ -27,6 +37,42 @@ enum StatementType {
     STMT_ILLEGAL,
 };
 
+enum OperatorType {
+		OP_UNKNOWN,
+        OP_ADD,
+        OP_SUBTRACT,
+        OP_MULTIPLY,
+        OP_DIVIDE,
+        OP_GT,
+        OP_GTE,
+        OP_LT,
+        OP_LTE,
+        OP_EQ,
+        OP_NOT_EQ,
+        OP_NEGATE,
+        OP_AND,
+        OP_OR,
+        OP_MODULO,
+};
+
+struct PrefixExpression {
+    enum OperatorType operatorType;
+    struct SExpression* right;
+};
+
+struct InfixExpression {
+    enum OperatorType operatorType;
+    struct SExpression* left;
+    struct SExpression* right;
+};
+
+struct IfExpression {
+    struct SExpression* condition;
+    struct block_statement* consequence;
+    struct block_statement* alternative;
+};
+
+
 typedef struct SIdentifier {
 	Token token;
 	char value[MAX_IDENT_LENGTH];
@@ -35,13 +81,22 @@ typedef struct SIdentifier {
 typedef struct SExpression {
     enum ExpressionType type;
 	Token token;
+    union {
+        int integer;
+        bool boolean;
+        char* string;
+        Identifier ident;
+        struct PrefixExpression prefix;
+        struct InfixExpression infix;
+        struct IfExpression ifelse;
+    };
 } Expression;
 
 typedef struct SStatement {
     enum StatementType type;
 	Token token;
 	Identifier identifier;
-	Expression expression;
+    Expression expr;
 } Statement;
 
 typedef struct SProgram {

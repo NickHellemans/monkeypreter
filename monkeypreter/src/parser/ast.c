@@ -24,19 +24,19 @@ void letStatementToStr(char* str, Statement* stmt) {
 	strcat_s(str, 1000000, " ");
 	strcat_s(str, 1000000, stmt->identifier.value);
 	strcat_s(str, 1000000, " = ");
-	strcat_s(str, 1000000, stmt->expression.token.literal);
+	strcat_s(str, 1000000, stmt->expr.token.literal);
 	strcat_s(str, 1000000, ";");
 }
 
 void retStatementToStr(char* str, Statement* stmt) {
 	strcat_s(str, 1000000, stmt->token.literal);
 	strcat_s(str, 1000000, " ");
-	strcat_s(str, 1000000, stmt->expression.token.literal);
+	strcat_s(str, 1000000, stmt->expr.token.literal);
 	strcat_s(str, 1000000, ";");
 }
 
 void exprStatementToStr(char* str, Statement* stmt) {
-	strcat_s(str, 1000000, stmt->expression.token.literal);
+	strcat_s(str, 1000000, stmt->expr.token.literal);
 }
 
 void statementToStr(char* str, Statement* stmt) {

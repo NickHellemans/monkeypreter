@@ -39,16 +39,13 @@ Program* parseProgram(Parser* parser) {
 }
 
 Statement parseStatement(Parser* parser) {
-	Statement stmt;
 	switch (parser->curToken.type) {
-
 		case TokenTypeLet : 
 			return parseLetStatement(parser);
 		case TokenTypeReturn:
 			return parseRetStatement(parser);
 		default:
-			stmt.type = STMT_ILLEGAL;
-			return stmt;
+			return parseExprStatement(parser);
 	}
 }
 
@@ -86,7 +83,7 @@ Statement parseRetStatement(Parser* parser) {
 	stmt.token = parser->curToken;
 
 	setParserNextToken(parser);
-	stmt.expression.token = parser->curToken;
+	stmt.expr.token = parser->curToken;
 
 	//Skip expr
 	while(!curTokenIs(parser, TokenTypeSemicolon)) {
@@ -94,6 +91,40 @@ Statement parseRetStatement(Parser* parser) {
 	}
 	return stmt;
 }
+
+Statement parseExprStatement(Parser* parser) {
+	Statement stmt;
+	stmt.type = STMT_EXPR;
+	stmt.token = parser->curToken;
+	stmt.expr = parseExpr(parser, LOWEST);
+
+	if (peekTokenIs(parser, TokenTypeSemicolon))
+		setParserNextToken(parser);
+
+	return stmt;
+}
+
+Expression parseExpr(Parser* parser, enum Precedence precedence) {
+	Expression leftExpr;
+	switch (parser->curToken.type) {
+		case TokenTypeIdent:
+			leftExpr = parseIdentExpr(parser);
+			break;
+	}
+
+	return leftExpr;
+}
+
+Expression parseIdentExpr(Parser* parser) {
+	Expression expr;
+	expr.type = EXPR_IDENT;
+	expr.token = parser->curToken;
+	expr.ident.token = expr.token;
+	strcpy_s(expr.ident.value, MAX_IDENT_LENGTH, parser->curToken.literal);
+
+	return expr;
+}
+
 void peekError(Parser* parser, TokenType type) {
 	char* msg = (char*) malloc(128 * sizeof(char));
 	int success = sprintf_s(msg, 128 * sizeof(char), "expected next token to be: %d, got: %d instead", type, parser->peekToken.type);

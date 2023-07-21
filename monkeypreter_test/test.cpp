@@ -323,7 +323,50 @@ TEST(TestParser, TestParser_02_ret)
 
 		if(strcmp(stmt.token.literal, "return") != 0 ) {
 			printf("Stmt token literal not 'return', got %s", stmt.token.literal);
+			FAIL();
 		}
 
+	}
+}
+
+TEST(TestParser, TestParser_03_Ident)
+{
+	const char* input = "foobar;";
+
+	Lexer lexer = createLexer(input);
+	Parser parser = createParser(&lexer);
+
+	Program* program = parseProgram(&parser);
+	checkParserErrors(&parser);
+
+	if (!program) {
+		printf("Parser returned NULL\n");
+		FAIL();
+	}
+
+	if (program->size != 1) {
+		printf("Program does not contain 1 statement, got %llu\n", program->size);
+		FAIL();
+	}
+
+	Statement stmt = program->statements[0];
+	if (stmt.type != STMT_EXPR) {
+		printf("Stmt not a expression statement, got %d", stmt.type);
+		FAIL();
+	}
+
+	if (stmt.expr.type != EXPR_IDENT) {
+		printf("Stmt not a expression statement, got %d", stmt.type);
+		FAIL();
+	}
+
+	if (strcmp(stmt.expr.ident.value, "foobar") != 0) {
+		printf("Ident value not 'foobar', got %s", stmt.expr.ident.value);
+		FAIL();
+	}
+
+	if (strcmp(stmt.expr.ident.token.literal, "foobar") != 0) {
+		printf("Ident token literal not 'foobar', got %s", stmt.expr.ident.token.literal);
+		FAIL();
 	}
 }
