@@ -21,12 +21,21 @@
     <ClCompile Include="src\lexer\lexer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\parser\parser.h">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\parser\parser.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lexer\lexer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\repl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\parser\ast.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

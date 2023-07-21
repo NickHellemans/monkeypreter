@@ -1,8 +1,10 @@
 #include "gtest/gtest.h"
 
 extern "C" {
-#include "lexer/lexer.h"
-#include "lexer/lexer.c"
+	#include "lexer/lexer.h"
+	#include "lexer/lexer.c"
+	#include "parser/parser.h"
+	#include "parser/parser.c"
 }
 
 TEST(TestLexer, TestNextToken_01)
@@ -213,4 +215,73 @@ TEST(TestLexer, TestNextToken_03)
 	}
 
 
+}
+
+bool testLetStatement(Statement stmt, const char* name) {
+
+	if(strcmp(stmt.token.literal, "let") != 0) {
+		printf("Token literal not 'let', got %s\n", stmt.token.literal);
+		return false;
+	}
+
+	if(stmt.type != STMT_LET) {
+		printf("Not a let statement, got %d", stmt.type);
+		return false;
+	}
+
+	if (strcmp(stmt.identifier.value, name) != 0) {
+		printf("Statement.Name.Value not '%s', got '%s'", name, stmt.identifier.value);
+		return false;
+	}
+
+	if (strcmp(stmt.identifier.token.literal, name) != 0) {
+		printf("Statement.Name.TokenLiteral not '%s', got '%s'", name, stmt.identifier.token.literal);
+		return false;
+	}
+
+	return true;
+}
+
+void checkParserErrors(Parser* parser) {
+
+	if (parser->errorsLen == 0)
+		return;
+
+	printf("Parser has %llu errors\n", parser->errorsLen);
+	for (size_t i = 0; i < parser->errorsLen; i++) {
+		printf("Parser error %llu: %s\n", i, parser->errors[i]);
+	}
+	FAIL();
+}
+
+TEST(TestParser, TestParser_01)
+{
+	const char* input = "let x = 5;"
+						"let y = 10;"
+						"let foobar = 838383;";
+
+	Lexer lexer = createLexer(input);
+	Parser parser = createParser(&lexer);
+
+	Program* program = parseProgram(&parser);
+	checkParserErrors(&parser);
+
+	if (!program) {
+		printf("Parser returned NULL\n");
+		FAIL();
+	}
+
+	if (program->size != 3) {
+		printf("Program does not contain 3 statements, got %llu\n", program->size);
+		FAIL();
+	}
+
+	std::string expectedIdents[] = { "x", "y", "foobar" };
+	for (int i = 0; i < 3; i++) {
+		Statement stmt = program->statements[i];
+		if (!testLetStatement(stmt, expectedIdents[i].c_str())) {
+			printf("Test failed on statement: %d\n", i);
+			FAIL();
+		}
+	}
 }
