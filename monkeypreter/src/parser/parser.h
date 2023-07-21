@@ -20,6 +20,7 @@ void setParserNextToken(Parser* parser);
 Program* parseProgram(Parser* parser);
 Statement parseStatement(Parser* parser);
 Statement parseLetStatement(Parser* parser);
+Statement parseRetStatement(Parser* parser);
 void peekError(Parser* parser, TokenType type);
 bool expectPeek(Parser* parser, TokenType tokenType);
 bool curTokenIs(Parser* parser, TokenType tokenType);

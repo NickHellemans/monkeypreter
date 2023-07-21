@@ -254,7 +254,7 @@ void checkParserErrors(Parser* parser) {
 	FAIL();
 }
 
-TEST(TestParser, TestParser_01)
+TEST(TestParser, TestParser_01_let)
 {
 	const char* input = "let x = 5;"
 						"let y = 10;"
@@ -283,5 +283,41 @@ TEST(TestParser, TestParser_01)
 			printf("Test failed on statement: %d\n", i);
 			FAIL();
 		}
+	}
+}
+
+TEST(TestParser, TestParser_02_ret)
+{
+	const char* input = "return 5;"
+		"return 10;"
+		"return 993322;";
+
+	Lexer lexer = createLexer(input);
+	Parser parser = createParser(&lexer);
+
+	Program* program = parseProgram(&parser);
+	checkParserErrors(&parser);
+
+	if (!program) {
+		printf("Parser returned NULL\n");
+		FAIL();
+	}
+
+	if (program->size != 3) {
+		printf("Program does not contain 3 statements, got %llu\n", program->size);
+		FAIL();
+	}
+
+	for (int i = 0; i < 3; i++) {
+		Statement stmt = program->statements[i];
+		if(stmt.type != STMT_RETURN) {
+			printf("Stmt not a return statement, got %d", stmt.type);
+			continue;
+		}
+
+		if(strcmp(stmt.token.literal, "return") != 0 ) {
+			printf("Stmt token literal not 'return', got %s", stmt.token.literal);
+		}
+
 	}
 }

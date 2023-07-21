@@ -44,7 +44,8 @@ Statement parseStatement(Parser* parser) {
 
 		case TokenTypeLet : 
 			return parseLetStatement(parser);
-
+		case TokenTypeReturn:
+			return parseRetStatement(parser);
 		default:
 			stmt.type = STMT_ILLEGAL;
 			return stmt;
@@ -79,6 +80,19 @@ Statement parseLetStatement(Parser* parser) {
 	return stmt;
 }
 
+Statement parseRetStatement(Parser* parser) {
+	Statement stmt;
+	stmt.type = STMT_RETURN;
+	stmt.token = parser->curToken;
+
+	setParserNextToken(parser);
+
+	//Skip expr
+	while(!curTokenIs(parser, TokenTypeSemicolon)) {
+		setParserNextToken(parser);
+	}
+	return stmt;
+}
 void peekError(Parser* parser, TokenType type) {
 	char* msg = (char*) malloc(128 * sizeof(char));
 	int success = sprintf_s(msg, 128 * sizeof(char), "expected next token to be: %d, got: %d instead", type, parser->peekToken.type);

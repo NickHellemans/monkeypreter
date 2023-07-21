@@ -50,8 +50,3 @@ typedef struct SProgram {
 	size_t size;
 } Program;
 
-typedef struct SLetStatement {
-	Token token;
-	Identifier name;
-	Expression value;
-} LetStatement;
