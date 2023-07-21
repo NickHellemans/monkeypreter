@@ -24,6 +24,7 @@ Statement parseRetStatement(Parser* parser);
 Statement parseExprStatement(Parser* parser);
 Expression parseExpr(Parser* parser, enum Precedence precedence);
 Expression parseIdentExpr(Parser* parser);
+Expression parseIntegerLiteralExpr(Parser* parser);
 void peekError(Parser* parser, TokenType type);
 bool expectPeek(Parser* parser, TokenType tokenType);
 bool curTokenIs(Parser* parser, TokenType tokenType);

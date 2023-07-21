@@ -1,4 +1,6 @@
 #pragma once
+#include <stdint.h>
+
 #include "../lexer/lexer.h"
 
 enum Precedence {
@@ -82,7 +84,7 @@ typedef struct SExpression {
     enum ExpressionType type;
 	Token token;
     union {
-        int integer;
+        int64_t integer;
         bool boolean;
         char* string;
         Identifier ident;

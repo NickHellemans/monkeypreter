@@ -110,6 +110,9 @@ Expression parseExpr(Parser* parser, enum Precedence precedence) {
 		case TokenTypeIdent:
 			leftExpr = parseIdentExpr(parser);
 			break;
+		case TokenTypeInt:
+			leftExpr = parseIntegerLiteralExpr(parser);
+			break;
 	}
 
 	return leftExpr;
@@ -122,6 +125,18 @@ Expression parseIdentExpr(Parser* parser) {
 	expr.ident.token = expr.token;
 	strcpy_s(expr.ident.value, MAX_IDENT_LENGTH, parser->curToken.literal);
 
+	return expr;
+}
+
+Expression parseIntegerLiteralExpr(Parser* parser) {
+	Expression expr;
+	expr.type = EXPR_INT;
+	expr.token = parser->curToken;
+	expr.integer = 0;
+	const char* s = expr.token.literal;
+	for (int i = 0; s[i] != '\0'; i++) {
+		expr.integer = expr.integer * 10 + (s[i] - 48);
+	}
 	return expr;
 }
 

@@ -356,7 +356,7 @@ TEST(TestParser, TestParser_03_Ident)
 	}
 
 	if (stmt.expr.type != EXPR_IDENT) {
-		printf("Stmt not a expression statement, got %d", stmt.type);
+		printf("Expression not a ident expression, got %d", stmt.type);
 		FAIL();
 	}
 
@@ -367,6 +367,48 @@ TEST(TestParser, TestParser_03_Ident)
 
 	if (strcmp(stmt.expr.ident.token.literal, "foobar") != 0) {
 		printf("Ident token literal not 'foobar', got %s", stmt.expr.ident.token.literal);
+		FAIL();
+	}
+}
+
+TEST(TestParser, TestParser_04_IntLiteral)
+{
+	const char* input = "5;";
+
+	Lexer lexer = createLexer(input);
+	Parser parser = createParser(&lexer);
+
+	Program* program = parseProgram(&parser);
+	checkParserErrors(&parser);
+
+	if (!program) {
+		printf("Parser returned NULL\n");
+		FAIL();
+	}
+
+	if (program->size != 1) {
+		printf("Program does not contain 1 statement, got %llu\n", program->size);
+		FAIL();
+	}
+
+	Statement stmt = program->statements[0];
+	if (stmt.type != STMT_EXPR) {
+		printf("Stmt not a expression statement, got %d\n", stmt.type);
+		FAIL();
+	}
+
+	if (stmt.expr.type != EXPR_INT) {
+		printf("Expression not a integer expression, got %d\n", stmt.type);
+		FAIL();
+	}
+
+	if (strcmp(stmt.expr.token.literal, "5") != 0) {
+		printf("Ident token literal not '5', got %s\n", stmt.expr.ident.token.literal);
+		FAIL();
+	}
+
+	if (stmt.expr.integer != 5) {
+		printf("Expression value not '5', got %lld\n", stmt.expr.integer);
 		FAIL();
 	}
 }
