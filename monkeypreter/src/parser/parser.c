@@ -3,6 +3,41 @@
 #include <stdio.h>
 #include <string.h>
 
+enum Precedence {
+	LOWEST = 1,
+	EQUALS,         // ==
+	LESSGREATER,    // < or >
+	SUM,            // - and +
+	PRODUCT,        // * and /
+	PREFIX,         // - or !x
+	CALL,           // fn()
+};
+
+
+enum Precedence getTokenPrecedence(Token token) {
+	switch (token.type) {
+
+		case TokenTypeEqual:
+		case TokenTypeNotEqual:
+			return EQUALS;
+
+		case TokenTypeLT:
+		case TokenTypeGT:
+			return LESSGREATER;
+
+		case TokenTypePlus:
+		case TokenTypeMinus:
+			return SUM;
+
+		case TokenTypeSlash:
+		case TokenTypeAsterisk:
+			return PRODUCT;
+
+		default:
+			return LOWEST;
+	}
+}
+
 Parser createParser(Lexer* lexer) {
 	Parser parser;
 	parser.lexer = lexer;
@@ -104,7 +139,7 @@ Statement parseExprStatement(Parser* parser) {
 	Statement stmt;
 	stmt.type = STMT_EXPR;
 	stmt.token = parser->curToken;
-	stmt.expr = parseExpr(parser, LOWEST);
+	stmt.expr = parseExpr(parser, (enum Precedence)LOWEST);
 
 	if (peekTokenIs(parser, TokenTypeSemicolon))
 		setParserNextToken(parser);
@@ -126,6 +161,28 @@ Expression* parseExpr(Parser* parser, enum Precedence precedence) {
 		case TokenTypeMinus:
 			leftExpr = parsePrefixExpr(parser);
 			break;
+		default:
+			//Error msg here?
+			return NULL;
+	}
+
+	while(!peekTokenIs(parser, TokenTypeSemicolon) && precedence < getTokenPrecedence(parser->peekToken)) {
+		switch (parser->peekToken.type) {
+			case TokenTypePlus:
+			case TokenTypeMinus:
+			case TokenTypeAsterisk:
+			case TokenTypeSlash:
+			case TokenTypeEqual:
+			case TokenTypeNotEqual:
+			case TokenTypeLT:
+			case TokenTypeGT:
+				setParserNextToken(parser);
+				leftExpr = parseInfixExpr(parser, leftExpr);
+				break;
+
+			default:
+				return leftExpr;
+			}
 	}
 
 	return leftExpr;
@@ -152,9 +209,18 @@ Expression* parsePrefixExpr(Parser* parser) {
 	Expression* expr = createExpression(EXPR_PREFIX, parser->curToken);
 	expr->prefix.operatorType = parseOperator(expr->token.type);
 	setParserNextToken(parser);
-	printf("In parsePrefixExpr, token after: %s is %s\n", expr->token.literal, parser->curToken.literal);
-	printf("Type = %d", parser->curToken.type);
-	expr->prefix.right = parseExpr(parser, PREFIX);
+	expr->prefix.right = parseExpr(parser, (enum Precedence)PREFIX);
+	return expr;
+}
+
+Expression* parseInfixExpr(Parser* parser, Expression* left) {
+	Expression* expr = createExpression(EXPR_INFIX, parser->curToken);
+	expr->infix.operatorType = parseOperator(expr->token.type);
+	expr->infix.left = left;
+
+	enum Precedence precedence = getTokenPrecedence(parser->curToken);
+	setParserNextToken(parser);
+	expr->infix.right = parseExpr(parser, (enum Precedence)precedence);
 	return expr;
 }
 

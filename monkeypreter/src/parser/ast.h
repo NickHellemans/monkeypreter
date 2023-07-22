@@ -3,15 +3,6 @@
 
 #include "../lexer/lexer.h"
 
-enum Precedence {
-    LOWEST = 1,
-    EQUALS,         // ==
-    LESSGREATER,    // < or >
-    SUM,            // - and +
-    PRODUCT,        // * and /
-    PREFIX,         // - or !x
-    CALL,           // fn()
-};
 
 enum ExpressionType {
     EXPR_INFIX = 1,
@@ -64,8 +55,9 @@ struct PrefixExpression {
 };
 
 struct InfixExpression {
-    enum OperatorType operatorType;
+    Token token;
     struct SExpression* left;
+    enum OperatorType operatorType;
     struct SExpression* right;
 };
 

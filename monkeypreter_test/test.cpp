@@ -487,3 +487,68 @@ TEST(TestParser, TestParser_05_PrefixExpr)
 		}
 	}
 }
+
+TEST(TestParser, TestParser_06_InfixExpr)
+{
+	struct infixTest {
+		char input[8];
+		int64_t leftValue;
+		OperatorType operatorType;
+		int64_t rightValue;
+	};
+
+	infixTest infixTests[]{
+		{"5 + 6;", 5, OP_ADD, 6},
+		{"5 - 5;", 5, OP_SUBTRACT, 5},
+		{"5 * 5;", 5, OP_MULTIPLY, 5},
+		{"5 / 5;", 5, OP_DIVIDE, 5},
+		{"5 > 5;", 5, OP_GT, 5},
+		{"5 < 5;", 5, OP_LT, 5},
+		{"5 == 5;", 5, OP_EQ, 5},
+		{"5 != 5;", 5, OP_NOT_EQ, 5},
+	};
+
+	for (int i = 0; i < 8; i++) {
+
+		Lexer lexer = createLexer(infixTests[i].input);
+		Parser parser = createParser(&lexer);
+
+		Program* program = parseProgram(&parser);
+		checkParserErrors(&parser);
+
+		if (!program) {
+			printf("Parser returned NULL\n");
+			FAIL();
+		}
+
+		if (program->size != 1) {
+			printf("Program does not contain 1 statement, got %llu\n", program->size);
+			FAIL();
+		}
+
+		Statement stmt = program->statements[0];
+		if (stmt.type != STMT_EXPR) {
+			printf("Stmt not a expression statement, got %d\n", stmt.type);
+			FAIL();
+		}
+
+		if (stmt.expr->type != EXPR_INFIX) {
+			printf("Expression not a infix expression, got %d\n", stmt.type);
+			FAIL();
+		}
+
+		if (!testIntegerLiteral(stmt.expr->infix.left, infixTests[i].leftValue)) {
+			FAIL();
+		}
+
+		if (stmt.expr->infix.operatorType != infixTests[i].operatorType) {
+			printf("Operator is not '%d', got %d\n", infixTests[i].operatorType, stmt.expr->infix.operatorType);
+			FAIL();
+		}
+
+
+		if (!testIntegerLiteral(stmt.expr->infix.right, infixTests[i].rightValue)) {
+			FAIL();
+		}
+	}
+}
