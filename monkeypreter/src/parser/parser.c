@@ -15,7 +15,15 @@ Parser createParser(Lexer* lexer) {
 
 	return parser;
 }
-
+Expression* createExpression(enum ExpressionType type, Token token) {
+	Expression* expr = (Expression*) malloc(sizeof(Expression));
+	if (!expr) {
+		perror("OUT OF MEMORY");
+	}
+	expr->type = type;
+	expr->token = token;
+	return expr;
+}
 void setParserNextToken(Parser* parser) {
 	parser->curToken = parser->peekToken;
 	parser->peekToken = nextToken(parser->lexer);
@@ -83,7 +91,7 @@ Statement parseRetStatement(Parser* parser) {
 	stmt.token = parser->curToken;
 
 	setParserNextToken(parser);
-	stmt.expr.token = parser->curToken;
+	stmt.expr = createExpression(EXPR_INT, parser->curToken);
 
 	//Skip expr
 	while(!curTokenIs(parser, TokenTypeSemicolon)) {
@@ -104,8 +112,8 @@ Statement parseExprStatement(Parser* parser) {
 	return stmt;
 }
 
-Expression parseExpr(Parser* parser, enum Precedence precedence) {
-	Expression leftExpr;
+Expression* parseExpr(Parser* parser, enum Precedence precedence) {
+	Expression* leftExpr = NULL;
 	switch (parser->curToken.type) {
 		case TokenTypeIdent:
 			leftExpr = parseIdentExpr(parser);
@@ -113,30 +121,40 @@ Expression parseExpr(Parser* parser, enum Precedence precedence) {
 		case TokenTypeInt:
 			leftExpr = parseIntegerLiteralExpr(parser);
 			break;
+
+		case TokenTypeBang:
+		case TokenTypeMinus:
+			leftExpr = parsePrefixExpr(parser);
+			break;
 	}
 
 	return leftExpr;
 }
 
-Expression parseIdentExpr(Parser* parser) {
-	Expression expr;
-	expr.type = EXPR_IDENT;
-	expr.token = parser->curToken;
-	expr.ident.token = expr.token;
-	strcpy_s(expr.ident.value, MAX_IDENT_LENGTH, parser->curToken.literal);
-
+Expression* parseIdentExpr(Parser* parser) {
+	Expression* expr = createExpression(EXPR_IDENT, parser->curToken);
+	expr->ident.token = expr->token;
+	strcpy_s(expr->ident.value, MAX_IDENT_LENGTH, parser->curToken.literal);
 	return expr;
 }
 
-Expression parseIntegerLiteralExpr(Parser* parser) {
-	Expression expr;
-	expr.type = EXPR_INT;
-	expr.token = parser->curToken;
-	expr.integer = 0;
-	const char* s = expr.token.literal;
+Expression* parseIntegerLiteralExpr(Parser* parser) {
+	Expression* expr = createExpression(EXPR_INT, parser->curToken);
+	expr->integer = 0;
+	const char* s = expr->token.literal;
 	for (int i = 0; s[i] != '\0'; i++) {
-		expr.integer = expr.integer * 10 + (s[i] - 48);
+		expr->integer = expr->integer * 10 + (s[i] - 48);
 	}
+	return expr;
+}
+
+Expression* parsePrefixExpr(Parser* parser) {
+	Expression* expr = createExpression(EXPR_PREFIX, parser->curToken);
+	expr->prefix.operatorType = parseOperator(expr->token.type);
+	setParserNextToken(parser);
+	printf("In parsePrefixExpr, token after: %s is %s\n", expr->token.literal, parser->curToken.literal);
+	printf("Type = %d", parser->curToken.type);
+	expr->prefix.right = parseExpr(parser, PREFIX);
 	return expr;
 }
 
@@ -165,3 +183,4 @@ bool curTokenIs(Parser* parser, TokenType tokenType) {
 bool peekTokenIs(Parser* parser, TokenType tokenType) {
 	return parser->peekToken.type == tokenType;
 }
+

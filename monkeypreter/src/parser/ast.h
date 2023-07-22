@@ -40,24 +40,25 @@ enum StatementType {
 };
 
 enum OperatorType {
-		OP_UNKNOWN,
-        OP_ADD,
-        OP_SUBTRACT,
-        OP_MULTIPLY,
-        OP_DIVIDE,
-        OP_GT,
-        OP_GTE,
-        OP_LT,
-        OP_LTE,
-        OP_EQ,
-        OP_NOT_EQ,
-        OP_NEGATE,
-        OP_AND,
-        OP_OR,
-        OP_MODULO,
+	OP_UNKNOWN,
+    OP_ADD,
+    OP_SUBTRACT,
+    OP_MULTIPLY,
+    OP_DIVIDE,
+    OP_GT,
+    OP_GTE,
+    OP_LT,
+    OP_LTE,
+    OP_EQ,
+    OP_NOT_EQ,
+    OP_NEGATE,
+    OP_AND,
+    OP_OR,
+    OP_MODULO,
 };
 
 struct PrefixExpression {
+    Token token;
     enum OperatorType operatorType;
     struct SExpression* right;
 };
@@ -70,10 +71,9 @@ struct InfixExpression {
 
 struct IfExpression {
     struct SExpression* condition;
-    struct block_statement* consequence;
-    struct block_statement* alternative;
+    struct blockStatement* consequence;
+    struct blockStatement* alternative;
 };
-
 
 typedef struct SIdentifier {
 	Token token;
@@ -98,7 +98,7 @@ typedef struct SStatement {
     enum StatementType type;
 	Token token;
 	Identifier identifier;
-    Expression expr;
+    Expression* expr;
 } Statement;
 
 typedef struct SProgram {
@@ -109,4 +109,5 @@ typedef struct SProgram {
 
 
 char* programToStr(Program* program);
-void statementToStr(char* str, Statement* stmt); 
+void statementToStr(char* str, Statement* stmt);
+enum OperatorType parseOperator(TokenType tokenType);

@@ -355,18 +355,18 @@ TEST(TestParser, TestParser_03_Ident)
 		FAIL();
 	}
 
-	if (stmt.expr.type != EXPR_IDENT) {
+	if (stmt.expr->type != EXPR_IDENT) {
 		printf("Expression not a ident expression, got %d", stmt.type);
 		FAIL();
 	}
 
-	if (strcmp(stmt.expr.ident.value, "foobar") != 0) {
-		printf("Ident value not 'foobar', got %s", stmt.expr.ident.value);
+	if (strcmp(stmt.expr->ident.value, "foobar") != 0) {
+		printf("Ident value not 'foobar', got %s", stmt.expr->ident.value);
 		FAIL();
 	}
 
-	if (strcmp(stmt.expr.ident.token.literal, "foobar") != 0) {
-		printf("Ident token literal not 'foobar', got %s", stmt.expr.ident.token.literal);
+	if (strcmp(stmt.expr->ident.token.literal, "foobar") != 0) {
+		printf("Ident token literal not 'foobar', got %s", stmt.expr->ident.token.literal);
 		FAIL();
 	}
 }
@@ -397,18 +397,93 @@ TEST(TestParser, TestParser_04_IntLiteral)
 		FAIL();
 	}
 
-	if (stmt.expr.type != EXPR_INT) {
+	if (stmt.expr->type != EXPR_INT) {
 		printf("Expression not a integer expression, got %d\n", stmt.type);
 		FAIL();
 	}
 
-	if (strcmp(stmt.expr.token.literal, "5") != 0) {
-		printf("Ident token literal not '5', got %s\n", stmt.expr.ident.token.literal);
+	if (strcmp(stmt.expr->token.literal, "5") != 0) {
+		printf("Ident token literal not '5', got %s\n", stmt.expr->ident.token.literal);
 		FAIL();
 	}
 
-	if (stmt.expr.integer != 5) {
-		printf("Expression value not '5', got %lld\n", stmt.expr.integer);
+	if (stmt.expr->integer != 5) {
+		printf("Expression value not '5', got %lld\n", stmt.expr->integer);
 		FAIL();
+	}
+}
+
+bool testIntegerLiteral(Expression* expr, int64_t integerVal) {
+
+	if (expr->type != EXPR_INT) {
+		printf("Expression not an integer expr, got %d\n", expr->type);
+		return false;
+	}
+
+	if(expr->integer != integerVal) {
+		printf("Integer not %lld, got %lld\n", integerVal, expr->integer);
+		return false;
+	}
+
+	char valAsStr[MAX_IDENT_LENGTH];
+	int success = sprintf_s(valAsStr, MAX_IDENT_LENGTH, "%lld", integerVal);
+	if (strcmp(expr->token.literal, valAsStr) != 0) {
+		printf("Integer token literal not %lld, got %s", integerVal, expr->token.literal);
+		return false;
+	}
+
+	return true;
+}
+
+TEST(TestParser, TestParser_05_PrefixExpr)
+{
+	struct prefixTest {
+		char input[5];
+		OperatorType operatorType;
+		int64_t integerValue;
+	};
+
+	prefixTest prefixTests[]{
+		{"!5;", OP_NEGATE, 5},
+		{"-15;", OP_SUBTRACT, 15},
+	};
+
+	for(int i = 0; i < 2; i++) {
+		
+		Lexer lexer = createLexer(prefixTests[i].input);
+		Parser parser = createParser(&lexer);
+
+		Program* program = parseProgram(&parser);
+		checkParserErrors(&parser);
+
+		if (!program) {
+			printf("Parser returned NULL\n");
+			FAIL();
+		}
+
+		if (program->size != 1) {
+			printf("Program does not contain 1 statement, got %llu\n", program->size);
+			FAIL();
+		}
+
+		Statement stmt = program->statements[0];
+		if (stmt.type != STMT_EXPR) {
+			printf("Stmt not a expression statement, got %d\n", stmt.type);
+			FAIL();
+		}
+
+		if (stmt.expr->type != EXPR_PREFIX) {
+			printf("Expression not a prefix expression, got %d\n", stmt.type);
+			FAIL();
+		}
+
+		if (stmt.expr->prefix.operatorType != prefixTests[i].operatorType) {
+			printf("Operator is not '%d', got %d\n", prefixTests[i].operatorType, stmt.expr->prefix.operatorType);
+			FAIL();
+		}
+
+		if (!testIntegerLiteral(stmt.expr->prefix.right, prefixTests[i].integerValue)) {
+			FAIL();
+		}
 	}
 }
