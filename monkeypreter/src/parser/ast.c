@@ -16,7 +16,7 @@ char* programToStr(Program* program) {
 
 	for (size_t i = 0; i < program->size; i++) {
 		statementToStr(str, &program->statements[i]);
-		strcat_s(str, MAX_PROGRAM_LEN, "\n");
+		//strcat_s(str, MAX_PROGRAM_LEN, "\n");
 	}
 	return str;
 }
