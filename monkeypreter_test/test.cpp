@@ -50,7 +50,6 @@ bool testIdentifier(Expression* expr, char* value) {
 }
 
 bool testBoolean(Expression* expr, bool value) {
-
 	if (expr->type != EXPR_BOOL) {
 		printf("expression not a boolean expr, got %d\n", expr->type);
 		return false;
@@ -513,7 +512,7 @@ TEST(TestParser, TestParser_05_PrefixExpr) {
 	};
 
 	prefixTest prefixTests[]{
-		{"!5;", OP_NEGATE, {5} },
+		{"!5;", OP_NEGATE, {5}},
 		{"-15;", OP_SUBTRACT, {15}},
 		{"!true;", OP_NEGATE, {true}},
 		{"!false;", OP_NEGATE, {false}},
@@ -567,18 +566,18 @@ TEST(TestParser, TestParser_06_InfixExpr) {
 	};
 
 	infixTest infixTests[]{
-	{"5 + 6;", {5}, OP_ADD, {6}},
-	{"5 - 5;", {5}, OP_SUBTRACT, {5}},
-	{"5 * 5;", {5}, OP_MULTIPLY, {5}},
-	{"5 / 5;", {5}, OP_DIVIDE, {5}},
-	{"5 > 5;", {5}, OP_GT, {5}},
-	{"5 < 5;", {5}, OP_LT, {5}},
-	{"5 == 5;", {5}, OP_EQ, {5}},
-	{"5 != 5;", {5}, OP_NOT_EQ, {5}},
-	//Add boolean tests
-	{"true == true", {true}, OP_EQ, {true}},
-	{"true != false", {true}, OP_NOT_EQ, {false}},
-	{"false == false", {false}, OP_EQ, {false}},
+		{"5 + 6;", {5}, OP_ADD, {6}},
+		{"5 - 5;", {5}, OP_SUBTRACT, {5}},
+		{"5 * 5;", {5}, OP_MULTIPLY, {5}},
+		{"5 / 5;", {5}, OP_DIVIDE, {5}},
+		{"5 > 5;", {5}, OP_GT, {5}},
+		{"5 < 5;", {5}, OP_LT, {5}},
+		{"5 == 5;", {5}, OP_EQ, {5}},
+		{"5 != 5;", {5}, OP_NOT_EQ, {5}},
+		//Add boolean tests
+		{"true == true", {true}, OP_EQ, {true}},
+		{"true != false", {true}, OP_NOT_EQ, {false}},
+		{"false == false", {false}, OP_EQ, {false}},
 	};
 
 	for (int i = 0; i < 11; i++) {
@@ -633,8 +632,8 @@ TEST(TestParser, TestParser_06_InfixExpr) {
 
 TEST(TestParser, TestParser_07_OperatorPrecedence) {
 	struct precedenceTest {
-		char input[27];
-		char expected[39];
+		char input[50];
+		char expected[50];
 	};
 
 	precedenceTest precedenceTests[]{
@@ -705,20 +704,44 @@ TEST(TestParser, TestParser_07_OperatorPrecedence) {
 			"3 < 5 == true",
 			"((3 < 5) == true)",
 		},
+		//Grouped expressions
+		{
+			"1 + (2 + 3) + 4",
+			"((1 + (2 + 3)) + 4)",
+		},
+		{
+			"(5 + 5) * 2",
+			"((5 + 5) * 2)",
+		},
+		{
+			"2 / (5 + 5)",
+			"(2 / (5 + 5))",
+		},
+		{
+			"-(5 + 5)",
+			"(-(5 + 5))",
+		},
+		{
+			"!(true == true)",
+			"(!(true == true))",
+		},
 	};
 
-	for (int i = 0; i < 13; i++) {
+	for (int i = 0; i < 22; i++) {
+		printf("At %d iteration\n", i);
+		printf("Input = %s\n", precedenceTests[i].input);
+		printf("Expected = %s\n", precedenceTests[i].expected);
 		Lexer lexer = createLexer(precedenceTests[i].input);
 		Parser parser = createParser(&lexer);
 
 		Program* program = parseProgram(&parser);
 		checkParserErrors(&parser);
-		char* actual = programToStr(program);
 
 		if (!program) {
 			printf("Parser returned NULL\n");
 			FAIL();
 		}
+		char* actual = programToStr(program);
 
 		if (strcmp(actual, precedenceTests[i].expected) != 0) {
 			printf("Expected %s, got %s", precedenceTests[i].expected, actual);

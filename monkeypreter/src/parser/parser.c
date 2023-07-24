@@ -153,6 +153,7 @@ Expression* parseExpr(Parser* parser, enum Precedence precedence) {
 		case TokenTypeIdent:
 			leftExpr = parseIdentExpr(parser);
 			break;
+
 		case TokenTypeInt:
 			leftExpr = parseIntegerLiteralExpr(parser);
 			break;
@@ -161,10 +162,16 @@ Expression* parseExpr(Parser* parser, enum Precedence precedence) {
 		case TokenTypeMinus:
 			leftExpr = parsePrefixExpr(parser);
 			break;
+
 		case TokenTypeFalse:
 		case TokenTypeTrue:
 			leftExpr = parseBoolExpr(parser);
 			break;
+
+		case TokenTypeLParen:
+			leftExpr = parseGroupedExpr(parser);
+			break;
+
 		default:
 			//Error msg here?
 			return NULL;
@@ -235,6 +242,20 @@ Expression* parseBoolExpr(Parser* parser) {
 	return expr;
 }
 
+Expression* parseGroupedExpr(Parser* parser) {
+
+	setParserNextToken(parser);
+
+	Expression* expr = parseExpr(parser, (enum Precedence) LOWEST);
+
+	if(!expectPeek(parser, TokenTypeRParen)) {
+		free(expr);
+		return NULL;
+	}
+
+	return expr;
+}
+
 void peekError(Parser* parser, TokenType type) {
 	char* msg = (char*) malloc(128 * sizeof(char));
 	int success = sprintf_s(msg, 128 * sizeof(char), "expected next token to be: %d, got: %d instead", type, parser->peekToken.type);
@@ -254,9 +275,11 @@ bool expectPeek(Parser* parser, TokenType tokenType) {
 	}
 	
 }
+
 bool curTokenIs(Parser* parser, TokenType tokenType) {
 	return parser->curToken.type == tokenType;
 }
+
 bool peekTokenIs(Parser* parser, TokenType tokenType) {
 	return parser->peekToken.type == tokenType;
 }
