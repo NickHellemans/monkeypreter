@@ -161,6 +161,10 @@ Expression* parseExpr(Parser* parser, enum Precedence precedence) {
 		case TokenTypeMinus:
 			leftExpr = parsePrefixExpr(parser);
 			break;
+		case TokenTypeFalse:
+		case TokenTypeTrue:
+			leftExpr = parseBoolExpr(parser);
+			break;
 		default:
 			//Error msg here?
 			return NULL;
@@ -221,6 +225,13 @@ Expression* parseInfixExpr(Parser* parser, Expression* left) {
 	enum Precedence precedence = getTokenPrecedence(parser->curToken);
 	setParserNextToken(parser);
 	expr->infix.right = parseExpr(parser, (enum Precedence)precedence);
+	return expr;
+}
+
+Expression* parseBoolExpr(Parser* parser) {
+	Expression* expr = createExpression(EXPR_BOOL, parser->curToken);
+	//Set boolean to true if token is TokenTypeTrue else it is TokenTypeFalse
+	expr->boolean = curTokenIs(parser, TokenTypeTrue);
 	return expr;
 }
 

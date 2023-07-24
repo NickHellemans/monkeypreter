@@ -27,6 +27,7 @@ Expression* parseIdentExpr(Parser* parser);
 Expression* parseIntegerLiteralExpr(Parser* parser);
 Expression* parsePrefixExpr(Parser* parser);
 Expression* parseInfixExpr(Parser* parser, Expression* left);
+Expression* parseBoolExpr(Parser* parser);
 void peekError(Parser* parser, TokenType type);
 bool expectPeek(Parser* parser, TokenType tokenType);
 bool curTokenIs(Parser* parser, TokenType tokenType);

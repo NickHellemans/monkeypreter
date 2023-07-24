@@ -65,6 +65,10 @@ void exprStatementToStr(char* str, Expression* expr) {
 			strcat_s(str, MAX_PROGRAM_LEN, expr->token.literal);
 			break;
 
+		case EXPR_BOOL:
+			strcat_s(str, MAX_PROGRAM_LEN, expr->token.literal);
+			break;
+
 		default:
 			strcat_s(str, MAX_PROGRAM_LEN, expr->token.literal);
 	}

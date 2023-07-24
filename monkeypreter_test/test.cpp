@@ -9,6 +9,145 @@ extern "C" {
 #include "parser/ast.c"
 }
 
+bool testIntegerLiteral(Expression* expr, int64_t integerVal) {
+	if (expr->type != EXPR_INT) {
+		printf("Expression not an integer expr, got %d\n", expr->type);
+		return false;
+	}
+
+	if (expr->integer != integerVal) {
+		printf("Integer not %lld, got %lld\n", integerVal, expr->integer);
+		return false;
+	}
+
+	char valAsStr[MAX_IDENT_LENGTH];
+	int success = sprintf_s(valAsStr, MAX_IDENT_LENGTH, "%lld", integerVal);
+	if (strcmp(expr->token.literal, valAsStr) != 0) {
+		printf("Integer token literal not %lld, got %s", integerVal, expr->token.literal);
+		return false;
+	}
+
+	return true;
+}
+
+bool testIdentifier(Expression* expr, char* value) {
+	if (expr->type != EXPR_IDENT) {
+		printf("Expression not an ident expr, got %d\n", expr->type);
+		return false;
+	}
+
+	if (strcmp(expr->ident.value, value) != 0) {
+		printf("Ident value not %s, got %s\n", value, expr->ident.value);
+		return false;
+	}
+
+	if (strcmp(expr->ident.token.literal, value) != 0) {
+		printf("Ident token literal not %s, got %s", value, expr->ident.token.literal);
+		return false;
+	}
+
+	return true;
+}
+
+bool testBoolean(Expression* expr, bool value) {
+
+	if (expr->type != EXPR_BOOL) {
+		printf("expression not a boolean expr, got %d\n", expr->type);
+		return false;
+	}
+
+	if (expr->boolean != value) {
+		printf("Boolean value not %hhd, got %hhd\n", value, expr->boolean);
+		return false;
+	}
+
+	const char* valAsStr = value ? "true" : "false";
+	if (strcmp(expr->token.literal, valAsStr) != 0) {
+		printf("Token literal not %s, got %s", valAsStr, expr->token.literal);
+		return false;
+	}
+
+	return true;
+}
+
+typedef union {
+	int64_t integer;
+	bool boolean;
+	char* string;
+	Identifier ident;
+	struct PrefixExpression prefix;
+	struct InfixExpression infix;
+	struct IfExpression ifelse;
+} expectedValue;
+
+bool testLiteralExpression(Expression* expr, expectedValue expected) {
+	switch (expr->type) {
+	case EXPR_INT: return testIntegerLiteral(expr, expected.integer);
+	case EXPR_IDENT: return testIdentifier(expr, expected.ident.value);
+	case EXPR_BOOL: return testBoolean(expr, expected.boolean);
+	default:
+		printf("Type of expr not handled, got %d", expr->type);
+		return false;
+	}
+}
+
+bool testInfixExpression(Expression* expr, expectedValue left, OperatorType op, expectedValue right) {
+	if (expr->type != EXPR_INFIX) {
+		printf("Expression not a infix expression, got %d\n", expr->type);
+		return false;
+	}
+
+	if (!testLiteralExpression(expr->infix.left, left)) {
+		return false;
+	}
+
+	if (expr->infix.operatorType != op) {
+		printf("Operator is not %d, got %d\n", op, expr->infix.operatorType);
+		return false;
+	}
+
+	if (!testLiteralExpression(expr->infix.right, right)) {
+		return false;
+	}
+
+	return true;
+}
+
+bool testLetStatement(Statement stmt, const char* name) {
+	if (strcmp(stmt.token.literal, "let") != 0) {
+		printf("Token literal not 'let', got %s\n", stmt.token.literal);
+		return false;
+	}
+
+	if (stmt.type != STMT_LET) {
+		printf("Not a let statement, got %d", stmt.type);
+		return false;
+	}
+
+	if (strcmp(stmt.identifier.value, name) != 0) {
+		printf("Statement.Name.Value not '%s', got '%s'", name, stmt.identifier.value);
+		return false;
+	}
+
+	if (strcmp(stmt.identifier.token.literal, name) != 0) {
+		printf("Statement.Name.TokenLiteral not '%s', got '%s'", name, stmt.identifier.token.literal);
+		return false;
+	}
+
+	return true;
+}
+
+void checkParserErrors(Parser* parser) {
+	if (parser->errorsLen == 0)
+		return;
+
+	printf("Parser has %llu errors\n", parser->errorsLen);
+	for (size_t i = 0; i < parser->errorsLen; i++) {
+		printf("Parser error %llu: %s\n", i, parser->errors[i]);
+	}
+	FAIL();
+}
+
 TEST(TestLexer, TestNextToken_01) {
 	const char* input = "=+(){},;";
 	Lexer lexer = createLexer(input);
@@ -212,40 +351,6 @@ TEST(TestLexer, TestNextToken_03) {
 	}
 }
 
-bool testLetStatement(Statement stmt, const char* name) {
-	if (strcmp(stmt.token.literal, "let") != 0) {
-		printf("Token literal not 'let', got %s\n", stmt.token.literal);
-		return false;
-	}
-
-	if (stmt.type != STMT_LET) {
-		printf("Not a let statement, got %d", stmt.type);
-		return false;
-	}
-
-	if (strcmp(stmt.identifier.value, name) != 0) {
-		printf("Statement.Name.Value not '%s', got '%s'", name, stmt.identifier.value);
-		return false;
-	}
-
-	if (strcmp(stmt.identifier.token.literal, name) != 0) {
-		printf("Statement.Name.TokenLiteral not '%s', got '%s'", name, stmt.identifier.token.literal);
-		return false;
-	}
-
-	return true;
-}
-
-void checkParserErrors(Parser* parser) {
-	if (parser->errorsLen == 0)
-		return;
-
-	printf("Parser has %llu errors\n", parser->errorsLen);
-	for (size_t i = 0; i < parser->errorsLen; i++) {
-		printf("Parser error %llu: %s\n", i, parser->errors[i]);
-	}
-	FAIL();
-}
 
 TEST(TestParser, TestParser_01_let) {
 	const char* input = "let x = 5;"
@@ -399,40 +504,22 @@ TEST(TestParser, TestParser_04_IntLiteral) {
 	}
 }
 
-bool testIntegerLiteral(Expression* expr, int64_t integerVal) {
-	if (expr->type != EXPR_INT) {
-		printf("Expression not an integer expr, got %d\n", expr->type);
-		return false;
-	}
-
-	if (expr->integer != integerVal) {
-		printf("Integer not %lld, got %lld\n", integerVal, expr->integer);
-		return false;
-	}
-
-	char valAsStr[MAX_IDENT_LENGTH];
-	int success = sprintf_s(valAsStr, MAX_IDENT_LENGTH, "%lld", integerVal);
-	if (strcmp(expr->token.literal, valAsStr) != 0) {
-		printf("Integer token literal not %lld, got %s", integerVal, expr->token.literal);
-		return false;
-	}
-
-	return true;
-}
 
 TEST(TestParser, TestParser_05_PrefixExpr) {
 	struct prefixTest {
-		char input[5];
+		char input[8];
 		OperatorType operatorType;
-		int64_t integerValue;
+		expectedValue expectedValue;
 	};
 
 	prefixTest prefixTests[]{
-		{"!5;", OP_NEGATE, 5},
-		{"-15;", OP_SUBTRACT, 15},
+		{"!5;", OP_NEGATE, {5} },
+		{"-15;", OP_SUBTRACT, {15}},
+		{"!true;", OP_NEGATE, {true}},
+		{"!false;", OP_NEGATE, {false}},
 	};
 
-	for (int i = 0; i < 2; i++) {
+	for (int i = 0; i < 4; i++) {
 		Lexer lexer = createLexer(prefixTests[i].input);
 		Parser parser = createParser(&lexer);
 
@@ -465,7 +552,7 @@ TEST(TestParser, TestParser_05_PrefixExpr) {
 			FAIL();
 		}
 
-		if (!testIntegerLiteral(stmt.expr->prefix.right, prefixTests[i].integerValue)) {
+		if (!testLiteralExpression(stmt.expr->prefix.right, prefixTests[i].expectedValue)) {
 			FAIL();
 		}
 	}
@@ -473,24 +560,28 @@ TEST(TestParser, TestParser_05_PrefixExpr) {
 
 TEST(TestParser, TestParser_06_InfixExpr) {
 	struct infixTest {
-		char input[8];
-		int64_t leftValue;
+		char input[15];
+		expectedValue leftValue;
 		OperatorType operatorType;
-		int64_t rightValue;
+		expectedValue rightValue;
 	};
 
 	infixTest infixTests[]{
-		{"5 + 6;", 5, OP_ADD, 6},
-		{"5 - 5;", 5, OP_SUBTRACT, 5},
-		{"5 * 5;", 5, OP_MULTIPLY, 5},
-		{"5 / 5;", 5, OP_DIVIDE, 5},
-		{"5 > 5;", 5, OP_GT, 5},
-		{"5 < 5;", 5, OP_LT, 5},
-		{"5 == 5;", 5, OP_EQ, 5},
-		{"5 != 5;", 5, OP_NOT_EQ, 5},
+	{"5 + 6;", {5}, OP_ADD, {6}},
+	{"5 - 5;", {5}, OP_SUBTRACT, {5}},
+	{"5 * 5;", {5}, OP_MULTIPLY, {5}},
+	{"5 / 5;", {5}, OP_DIVIDE, {5}},
+	{"5 > 5;", {5}, OP_GT, {5}},
+	{"5 < 5;", {5}, OP_LT, {5}},
+	{"5 == 5;", {5}, OP_EQ, {5}},
+	{"5 != 5;", {5}, OP_NOT_EQ, {5}},
+	//Add boolean tests
+	{"true == true", {true}, OP_EQ, {true}},
+	{"true != false", {true}, OP_NOT_EQ, {false}},
+	{"false == false", {false}, OP_EQ, {false}},
 	};
 
-	for (int i = 0; i < 8; i++) {
+	for (int i = 0; i < 11; i++) {
 		Lexer lexer = createLexer(infixTests[i].input);
 		Parser parser = createParser(&lexer);
 
@@ -513,26 +604,32 @@ TEST(TestParser, TestParser_06_InfixExpr) {
 			FAIL();
 		}
 
-		if (stmt.expr->type != EXPR_INFIX) {
-			printf("Expression not a infix expression, got %d\n", stmt.type);
-			FAIL();
-		}
+		//if (stmt.expr->type != EXPR_INFIX) {
+		//	printf("Expression not a infix expression, got %d\n", stmt.type);
+		//	FAIL();
+		//}
 
-		if (!testIntegerLiteral(stmt.expr->infix.left, infixTests[i].leftValue)) {
-			FAIL();
-		}
+		//if (!testIntegerLiteral(stmt.expr->infix.left, infixTests[i].leftValue)) {
+		//	FAIL();
+		//}
 
-		if (stmt.expr->infix.operatorType != infixTests[i].operatorType) {
-			printf("Operator is not '%d', got %d\n", infixTests[i].operatorType, stmt.expr->infix.operatorType);
-			FAIL();
-		}
+		//if (stmt.expr->infix.operatorType != infixTests[i].operatorType) {
+		//	printf("Operator is not '%d', got %d\n", infixTests[i].operatorType, stmt.expr->infix.operatorType);
+		//	FAIL();
+		//}
 
 
-		if (!testIntegerLiteral(stmt.expr->infix.right, infixTests[i].rightValue)) {
+		//if (!testIntegerLiteral(stmt.expr->infix.right, infixTests[i].rightValue)) {
+		//	FAIL();
+		//}
+		const expectedValue left = infixTests[i].leftValue;
+		const expectedValue right = infixTests[i].rightValue;
+		if (!testInfixExpression(stmt.expr, left, infixTests[i].operatorType, right)) {
 			FAIL();
 		}
 	}
 }
+
 
 TEST(TestParser, TestParser_07_OperatorPrecedence) {
 	struct precedenceTest {
@@ -590,7 +687,24 @@ TEST(TestParser, TestParser_07_OperatorPrecedence) {
 		{
 			"3 + 4 * 5 == 3 * 1 + 4 * 5",
 			"((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
-		}
+		},
+		//Test with bools
+		{
+			"true",
+			"true",
+		},
+		{
+			"false",
+			"false",
+		},
+		{
+			"3 > 5 == false",
+			"((3 > 5) == false)",
+		},
+		{
+			"3 < 5 == true",
+			"((3 < 5) == true)",
+		},
 	};
 
 	for (int i = 0; i < 13; i++) {
@@ -606,8 +720,48 @@ TEST(TestParser, TestParser_07_OperatorPrecedence) {
 			FAIL();
 		}
 
-		if(_strcmpi(actual, precedenceTests[i].expected) != 0 ) {
+		if (strcmp(actual, precedenceTests[i].expected) != 0) {
 			printf("Expected %s, got %s", precedenceTests[i].expected, actual);
+			FAIL();
+		}
+	}
+}
+
+TEST(TestParser, TestParser_08_Bool) {
+	struct boolTest {
+		char input[8];
+		bool expected;
+	};
+
+	boolTest boolTests[]{
+		{"true;", true},
+		{"false;", false},
+	};
+
+	for (int i = 0; i < 2; i++) {
+		Lexer lexer = createLexer(boolTests[i].input);
+		Parser parser = createParser(&lexer);
+
+		Program* program = parseProgram(&parser);
+		checkParserErrors(&parser);
+
+		if (!program) {
+			printf("Parser returned NULL\n");
+			FAIL();
+		}
+
+		if (program->size != 1) {
+			printf("Program does not contain 1 statement, got %llu\n", program->size);
+			FAIL();
+		}
+
+		Statement stmt = program->statements[0];
+		if (stmt.type != STMT_EXPR) {
+			printf("Stmt not a expression statement, got %d", stmt.type);
+			FAIL();
+		}
+
+		if (!testBoolean(stmt.expr, boolTests[i].expected)) {
 			FAIL();
 		}
 	}
