@@ -30,7 +30,7 @@ bool testIntegerLiteral(Expression* expr, int64_t integerVal) {
 	return true;
 }
 
-bool testIdentifier(Expression* expr, char* value) {
+bool testIdentifier(Expression* expr, const char* value) {
 	if (expr->type != EXPR_IDENT) {
 		printf("Expression not an ident expr, got %d\n", expr->type);
 		return false;
@@ -77,9 +77,9 @@ typedef union {
 	struct PrefixExpression prefix;
 	struct InfixExpression infix;
 	struct IfExpression ifelse;
-} expectedValue;
+} ExpectedValue;
 
-bool testLiteralExpression(Expression* expr, expectedValue expected) {
+bool testLiteralExpression(Expression* expr, ExpectedValue expected) {
 	switch (expr->type) {
 	case EXPR_INT: return testIntegerLiteral(expr, expected.integer);
 	case EXPR_IDENT: return testIdentifier(expr, expected.ident.value);
@@ -90,7 +90,7 @@ bool testLiteralExpression(Expression* expr, expectedValue expected) {
 	}
 }
 
-bool testInfixExpression(Expression* expr, expectedValue left, OperatorType op, expectedValue right) {
+bool testInfixExpression(Expression* expr, ExpectedValue left, OperatorType op, ExpectedValue right) {
 	if (expr->type != EXPR_INFIX) {
 		printf("Expression not a infix expression, got %d\n", expr->type);
 		return false;
@@ -508,7 +508,7 @@ TEST(TestParser, TestParser_05_PrefixExpr) {
 	struct prefixTest {
 		char input[8];
 		OperatorType operatorType;
-		expectedValue expectedValue;
+		ExpectedValue expectedValue;
 	};
 
 	prefixTest prefixTests[]{
@@ -560,9 +560,9 @@ TEST(TestParser, TestParser_05_PrefixExpr) {
 TEST(TestParser, TestParser_06_InfixExpr) {
 	struct infixTest {
 		char input[15];
-		expectedValue leftValue;
+		ExpectedValue leftValue;
 		OperatorType operatorType;
-		expectedValue rightValue;
+		ExpectedValue rightValue;
 	};
 
 	infixTest infixTests[]{
@@ -621,8 +621,8 @@ TEST(TestParser, TestParser_06_InfixExpr) {
 		//if (!testIntegerLiteral(stmt.expr->infix.right, infixTests[i].rightValue)) {
 		//	FAIL();
 		//}
-		const expectedValue left = infixTests[i].leftValue;
-		const expectedValue right = infixTests[i].rightValue;
+		const ExpectedValue left = infixTests[i].leftValue;
+		const ExpectedValue right = infixTests[i].rightValue;
 		if (!testInfixExpression(stmt.expr, left, infixTests[i].operatorType, right)) {
 			FAIL();
 		}
@@ -787,5 +787,155 @@ TEST(TestParser, TestParser_08_Bool) {
 		if (!testBoolean(stmt.expr, boolTests[i].expected)) {
 			FAIL();
 		}
+	}
+}
+
+
+TEST(TestParser, TestParser_09_IfExpression) {
+
+	const char* input = "if (x < y) { x }";
+
+	Lexer lexer = createLexer(input);
+	Parser parser = createParser(&lexer);
+
+	Program* program = parseProgram(&parser);
+	checkParserErrors(&parser);
+
+	if (!program) {
+		printf("Parser returned NULL\n");
+		FAIL();
+	}
+
+	if (program->size != 1) {
+		printf("Program does not contain 1 statement, got %llu\n", program->size);
+		FAIL();
+	}
+
+	Statement stmt = program->statements[0];
+	if (stmt.type != STMT_EXPR) {
+		printf("Stmt not a expression statement, got %d", stmt.type);
+		FAIL();
+	}
+
+	if (stmt.expr->type != EXPR_IF) {
+		printf("Expression not an IfExpression, got %d", stmt.expr->type);
+		FAIL();
+	}
+
+	ExpectedValue left;
+	strcpy_s(left.ident.value, "x");
+	ExpectedValue right;
+	strcpy_s(right.ident.value, "y");
+
+	if(!testInfixExpression(stmt.expr->ifelse.condition, left, OP_LT, right)) {
+		FAIL();
+	}
+
+	BlockStatement* consequence = stmt.expr->ifelse.consequence;
+
+	if(!consequence) {
+		printf("Expected consequence block statement, got NULL\n");
+		FAIL();
+	}
+
+	if(consequence->size != 1) {
+		printf("Consequence does not contain 1 statement, got %llu\n", consequence->size);
+		FAIL();
+	}
+
+	if(consequence->statements[0].type != STMT_EXPR) {
+		printf("Statements[0] is not an expression statement, got %d", consequence->statements[0].type);
+		FAIL();
+	}
+
+	if (!testIdentifier(consequence->statements[0].expr, "x")) {
+		FAIL();
+	}
+
+	if(stmt.expr->ifelse.alternative) {
+		printf("Alternative statement is not NULL, expected NULL");
+		FAIL();
+	}
+}
+
+TEST(TestParser, TestParser_10_IfElseExpression) {
+
+	const char* input = "if (x < y) { x } else { y }";
+
+	Lexer lexer = createLexer(input);
+	Parser parser = createParser(&lexer);
+
+	Program* program = parseProgram(&parser);
+	checkParserErrors(&parser);
+
+	if (!program) {
+		printf("Parser returned NULL\n");
+		FAIL();
+	}
+
+	if (program->size != 1) {
+		printf("Program does not contain 1 statement, got %llu\n", program->size);
+		FAIL();
+	}
+
+	Statement stmt = program->statements[0];
+	if (stmt.type != STMT_EXPR) {
+		printf("Stmt not a expression statement, got %d", stmt.type);
+		FAIL();
+	}
+
+	if (stmt.expr->type != EXPR_IF) {
+		printf("Expression not an IfExpression, got %d", stmt.expr->type);
+		FAIL();
+	}
+
+	ExpectedValue left;
+	strcpy_s(left.ident.value, "x");
+	ExpectedValue right;
+	strcpy_s(right.ident.value, "y");
+
+	if (!testInfixExpression(stmt.expr->ifelse.condition, left, OP_LT, right)) {
+		FAIL();
+	}
+
+	BlockStatement* consequence = stmt.expr->ifelse.consequence;
+
+	if (!consequence) {
+		printf("Expected consequence block statement, got NULL\n");
+		FAIL();
+	}
+
+	if (consequence->size != 1) {
+		printf("Consequence does not contain 1 statement, got %llu\n", consequence->size);
+		FAIL();
+	}
+
+	if (consequence->statements[0].type != STMT_EXPR) {
+		printf("Statements[0] is not an expression statement, got %d", consequence->statements[0].type);
+		FAIL();
+	}
+
+	if (!testIdentifier(consequence->statements[0].expr, "x")) {
+		FAIL();
+	}
+
+	BlockStatement* alternative = stmt.expr->ifelse.alternative;
+	if (!alternative) {
+		printf("Expected alternative block statement, got NULL");
+		FAIL();
+	}
+
+	if (alternative->size != 1) {
+		printf("Alternative does not contain 1 statement, got %llu\n", alternative->size);
+		FAIL();
+	}
+
+	if (alternative->statements[0].type != STMT_EXPR) {
+		printf("Statements[0] is not an expression statement, got %d", alternative->statements[0].type);
+		FAIL();
+	}
+
+	if (!testIdentifier(alternative->statements[0].expr, "y")) {
+		FAIL();
 	}
 }

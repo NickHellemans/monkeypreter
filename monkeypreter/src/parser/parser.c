@@ -54,11 +54,30 @@ Expression* createExpression(enum ExpressionType type, Token token) {
 	Expression* expr = (Expression*) malloc(sizeof(Expression));
 	if (!expr) {
 		perror("OUT OF MEMORY");
+		return NULL;
 	}
 	expr->type = type;
 	expr->token = token;
 	return expr;
 }
+
+struct BlockStatement* createBlockStatement(Token token) {
+	struct BlockStatement* bs = (struct BlockStatement*) malloc(sizeof *bs);
+	if (!bs) {
+		perror("OUT OF MEMORY");
+		return NULL;
+	}
+	bs->token = token;
+	bs->cap = 0;
+	bs->size = 0;
+	bs->statements = (Statement*) malloc(1000000);
+	if (!bs->statements) {
+		perror("OUT OF MEMORY");
+		return NULL;
+	}
+	return bs;
+}
+
 void setParserNextToken(Parser* parser) {
 	parser->curToken = parser->peekToken;
 	parser->peekToken = nextToken(parser->lexer);
@@ -66,7 +85,14 @@ void setParserNextToken(Parser* parser) {
 
 Program* parseProgram(Parser* parser) {
 	Program* program = (Program*) malloc(sizeof(Statement*) + 2 * sizeof(size_t));
+	if(!program) {
+		return NULL;
+	}
 	program->statements = (Statement*) malloc(1000000);
+
+	if (!program->statements) {
+		return NULL;
+	}
 	program->size = 0;
 	program->cap = 0;
 
@@ -172,6 +198,10 @@ Expression* parseExpr(Parser* parser, enum Precedence precedence) {
 			leftExpr = parseGroupedExpr(parser);
 			break;
 
+		case TokenTypeIf:
+			leftExpr = parseIfExpression(parser);
+			break;
+
 		default:
 			//Error msg here?
 			return NULL;
@@ -256,8 +286,60 @@ Expression* parseGroupedExpr(Parser* parser) {
 	return expr;
 }
 
+Expression* parseIfExpression(Parser* parser) {
+	Expression* expr = createExpression(EXPR_IF, parser->curToken);
+
+	if(!expectPeek(parser, TokenTypeLParen)) {
+		return NULL;
+	}
+
+	setParserNextToken(parser);
+
+	expr->ifelse.condition = parseExpr(parser, (enum Precedence) LOWEST);
+	if(!expectPeek(parser, TokenTypeRParen)) {
+		return NULL;
+	}
+
+	if (!expectPeek(parser, TokenTypeLSquirly)) {
+		return NULL;
+	}
+
+	expr->ifelse.consequence = parseBlockStatement(parser);
+	expr->ifelse.alternative = NULL;
+
+	if(peekTokenIs(parser, TokenTypeElse)) {
+		setParserNextToken(parser);
+
+		if(!expectPeek(parser, TokenTypeLSquirly)) {
+			return NULL;
+		}
+
+		expr->ifelse.alternative = parseBlockStatement(parser);
+
+	}
+	return expr;
+}
+
+struct BlockStatement* parseBlockStatement(Parser* parser) {
+	struct BlockStatement* bs = createBlockStatement(parser->curToken);
+	setParserNextToken(parser);
+	while(!curTokenIs(parser, TokenTypeRSquirly) && !curTokenIs(parser, TokenTypeEof)) {
+		Statement stmt = parseStatement(parser);
+		if(stmt.type != STMT_ILLEGAL) {
+			bs->statements[bs->size] = stmt;
+			bs->size++;
+		}
+		setParserNextToken(parser);
+	}
+	return bs;
+}
+
 void peekError(Parser* parser, TokenType type) {
 	char* msg = (char*) malloc(128 * sizeof(char));
+	if (!msg) {
+		return;
+	}
+
 	int success = sprintf_s(msg, 128 * sizeof(char), "expected next token to be: %d, got: %d instead", type, parser->peekToken.type);
 
 	parser->errors[parser->errorsLen] = msg;

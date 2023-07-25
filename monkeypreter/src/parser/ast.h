@@ -62,9 +62,10 @@ struct InfixExpression {
 };
 
 struct IfExpression {
+    Token token;
     struct SExpression* condition;
-    struct blockStatement* consequence;
-    struct blockStatement* alternative;
+    struct BlockStatement* consequence;
+    struct BlockStatement* alternative;
 };
 
 typedef struct SIdentifier {
@@ -93,6 +94,13 @@ typedef struct SStatement {
     Expression* expr;
 } Statement;
 
+struct BlockStatement {
+    Token token;
+    size_t cap;
+    size_t size;
+    Statement* statements;
+};
+
 typedef struct SProgram {
 	Statement* statements;
     size_t cap;
@@ -100,6 +108,6 @@ typedef struct SProgram {
 } Program;
 
 
-char* programToStr(Program* program);
-void statementToStr(char* str, Statement* stmt);
+char* programToStr(const Program* program);
+void statementToStr(char* str, const Statement* stmt);
 enum OperatorType parseOperator(TokenType tokenType);

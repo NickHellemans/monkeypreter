@@ -4,11 +4,12 @@
 
 #define MAX_PROGRAM_LEN 1000000
 
-char* programToStr(Program* program) {
+char* programToStr(const Program* program) {
 	char* str = (char*) malloc(MAX_PROGRAM_LEN);
 	if (!str) {
 		int success = fprintf(stderr, "Value of errno: %d\n", errno);
 		perror("OUT OF MEMORY");
+		return NULL;
 	}
 
 	//Init with NTC for strcat to look for when adding next string
@@ -21,7 +22,7 @@ char* programToStr(Program* program) {
 	return str;
 }
 
-void letStatementToStr(char* str, Statement* stmt) {
+void letStatementToStr(char* str, const Statement* stmt) {
 	strcat_s(str, MAX_PROGRAM_LEN, stmt->token.literal);
 	strcat_s(str, MAX_PROGRAM_LEN, " ");
 	strcat_s(str, MAX_PROGRAM_LEN, stmt->identifier.value);
@@ -30,15 +31,20 @@ void letStatementToStr(char* str, Statement* stmt) {
 	strcat_s(str, MAX_PROGRAM_LEN, ";");
 }
 
-void retStatementToStr(char* str, Statement* stmt) {
+void retStatementToStr(char* str, const Statement* stmt) {
 	strcat_s(str, MAX_PROGRAM_LEN, stmt->token.literal);
 	strcat_s(str, MAX_PROGRAM_LEN, " ");
 	strcat_s(str, MAX_PROGRAM_LEN, stmt->expr->token.literal);
 	strcat_s(str, MAX_PROGRAM_LEN, ";");
 }
 
+void blockStatementToStr(char* str, const struct BlockStatement* bs) {
+	for(size_t i = 0; i < bs->size; i++) {
+		statementToStr(str, &bs->statements[i]);
+	}
+}
 
-void exprStatementToStr(char* str, Expression* expr) {
+void exprStatementToStr(char* str, const Expression* expr) {
 	switch (expr->type) {
 		case EXPR_PREFIX:
 			strcat_s(str, MAX_PROGRAM_LEN, "(");
@@ -62,11 +68,19 @@ void exprStatementToStr(char* str, Expression* expr) {
 			break;
 
 		case EXPR_INT:
+		case EXPR_BOOL:
 			strcat_s(str, MAX_PROGRAM_LEN, expr->token.literal);
 			break;
 
-		case EXPR_BOOL:
-			strcat_s(str, MAX_PROGRAM_LEN, expr->token.literal);
+		case EXPR_IF:
+			strcat_s(str, MAX_PROGRAM_LEN, "if");
+			exprStatementToStr(str, expr->ifelse.condition);
+			strcat_s(str, MAX_PROGRAM_LEN, " ");
+			blockStatementToStr(str, expr->ifelse.consequence);
+			if(expr->ifelse.alternative) {
+				strcat_s(str, MAX_PROGRAM_LEN, "else");
+				blockStatementToStr(str, expr->ifelse.alternative);
+			}
 			break;
 
 		default:
@@ -74,7 +88,7 @@ void exprStatementToStr(char* str, Expression* expr) {
 	}
 }
 
-void statementToStr(char* str, Statement* stmt) {
+void statementToStr(char* str, const Statement* stmt) {
 
 	switch (stmt->type) {
 		case STMT_LET:

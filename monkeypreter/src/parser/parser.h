@@ -29,6 +29,8 @@ Expression* parsePrefixExpr(Parser* parser);
 Expression* parseInfixExpr(Parser* parser, Expression* left);
 Expression* parseBoolExpr(Parser* parser);
 Expression* parseGroupedExpr(Parser* parser);
+Expression* parseIfExpression(Parser* parser);
+struct BlockStatement* parseBlockStatement(Parser* parser);
 void peekError(Parser* parser, TokenType type);
 bool expectPeek(Parser* parser, TokenType tokenType);
 bool curTokenIs(Parser* parser, TokenType tokenType);
