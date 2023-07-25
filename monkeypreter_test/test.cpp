@@ -939,3 +939,120 @@ TEST(TestParser, TestParser_10_IfElseExpression) {
 		FAIL();
 	}
 }
+
+TEST(TestParser, TestParser_11_FunctionLiteral) {
+
+	const char* input = "fn(x, y) { x + y; }";
+
+	Lexer lexer = createLexer(input);
+	Parser parser = createParser(&lexer);
+
+	Program* program = parseProgram(&parser);
+	checkParserErrors(&parser);
+
+	if (!program) {
+		printf("Parser returned NULL\n");
+		FAIL();
+	}
+
+	if (program->size != 1) {
+		printf("Program does not contain 1 statement, got %llu\n", program->size);
+		FAIL();
+	}
+
+	Statement stmt = program->statements[0];
+	if (stmt.type != STMT_EXPR) {
+		printf("Stmt not a expression statement, got %d", stmt.type);
+		FAIL();
+	}
+
+	if (stmt.expr->type != EXPR_FUNCTION) {
+		printf("Expression not a function literal expression, got %d", stmt.expr->type);
+		FAIL();
+	}
+
+	FunctionLiteral fn = stmt.expr->function;
+
+	if(fn.parameters.size != 2) {
+		printf("Function literal parameters wrong. want 2, got=%llu", fn.parameters.size);
+		FAIL();
+	}
+
+	if(strcmp(fn.parameters.values[0].value, "x") != 0) {
+		printf("Invalid parameter[0]: expected 'x', got %s", fn.parameters.values[0].value);
+		FAIL();
+	}
+
+	if (strcmp(fn.parameters.values[1].value, "y") != 0) {
+		printf("Invalid parameter[0]: expected 'y', got %s", fn.parameters.values[0].value);
+		FAIL();
+	}
+
+	if(fn.body->size != 1) {
+		printf("Function body statements not equal to 1, got %lld", fn.body->size);
+		FAIL();
+	}
+
+	if(fn.body->statements[0].type != STMT_EXPR) {
+		printf("function body statement is not an Expression statement, got %d", fn.body->statements[0].type);
+		FAIL();
+	}
+
+	ExpectedValue left;
+	strcpy_s(left.ident.value, "x");
+	ExpectedValue right;
+	strcpy_s(right.ident.value, "y");
+
+	if (!testInfixExpression(fn.body->statements[0].expr, left, OP_ADD, right)) {
+		FAIL();
+	}
+}
+
+TEST(TestParser, TestParser_12_FunctionParameters) {
+
+	struct Test {
+		char input[16];
+		const char* expectedParams[3];
+		size_t expectedSize;
+	};
+
+	const Test tests[] = {
+		{"fn() {};", {}, 0},
+		{"fn(x) {};", {"x"}, 1},
+		{"fn(x, y, z) {};", {"x", "y", "z"}, 3},
+	};
+
+	for (int i = 0; i < 3; i++) {
+		printf("Starting test: %d\n", i);
+		Lexer lexer = createLexer(tests[i].input);
+		Parser parser = createParser(&lexer);
+
+		Program* program = parseProgram(&parser);
+		checkParserErrors(&parser);
+
+		if (!program) {
+			printf("Parser returned NULL\n");
+			FAIL();
+		}
+
+		if (program->size != 1) {
+			printf("Program does not contain 1 statement, got %llu\n", program->size);
+			FAIL();
+		}
+
+		Statement stmt = program->statements[0];
+		FunctionLiteral fn = stmt.expr->function;
+
+		if (fn.parameters.size != tests[i].expectedSize) {
+			printf("Length function literal parameters wrong. want %llu, got=%llu\n", tests[i].expectedSize, fn.parameters.size);
+			FAIL();
+		}
+
+		for(size_t j = 0; j < tests[i].expectedSize; j++) {
+			if (strcmp(fn.parameters.values[j].value, tests[i].expectedParams[j]) != 0) {
+				printf("Invalid parameter: expected '%s', got %s\n", tests[i].expectedParams[j], fn.parameters.values[j].value);
+				FAIL();
+			}
+		}
+	}
+}

@@ -68,10 +68,23 @@ struct IfExpression {
     struct BlockStatement* alternative;
 };
 
+
 typedef struct SIdentifier {
 	Token token;
 	char value[MAX_IDENT_LENGTH];
 } Identifier;
+
+struct IdentifierList {
+    Identifier* values;
+    size_t size;
+    size_t cap;
+};
+
+struct FunctionLiteral {
+    Token token;
+    struct IdentifierList parameters;
+    struct BlockStatement* body;
+};
 
 typedef struct SExpression {
     enum ExpressionType type;
@@ -84,6 +97,7 @@ typedef struct SExpression {
         struct PrefixExpression prefix;
         struct InfixExpression infix;
         struct IfExpression ifelse;
+        struct FunctionLiteral function;
     };
 } Expression;
 

@@ -83,6 +83,20 @@ void exprStatementToStr(char* str, const Expression* expr) {
 			}
 			break;
 
+		case EXPR_FUNCTION:
+			strcat_s(str, MAX_PROGRAM_LEN, expr->function.token.literal);
+			strcat_s(str, MAX_PROGRAM_LEN, "(");
+			for(size_t i = 0; i < expr->function.parameters.size; i++) {
+				if(i > 0) {
+					strcat_s(str, MAX_PROGRAM_LEN, ", ");
+				}
+
+				strcat_s(str, MAX_PROGRAM_LEN, expr->function.parameters.values[i].value);
+			}
+			strcat_s(str, MAX_PROGRAM_LEN, ")");
+			blockStatementToStr(str, expr->function.body);
+			break;
+
 		default:
 			strcat_s(str, MAX_PROGRAM_LEN, expr->token.literal);
 	}

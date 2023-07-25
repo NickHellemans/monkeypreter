@@ -202,6 +202,10 @@ Expression* parseExpr(Parser* parser, enum Precedence precedence) {
 			leftExpr = parseIfExpression(parser);
 			break;
 
+		case TokenTypeFunction:
+			leftExpr = parseFunctionLiteralExpr(parser);
+			break;
+
 		default:
 			//Error msg here?
 			return NULL;
@@ -334,6 +338,64 @@ struct BlockStatement* parseBlockStatement(Parser* parser) {
 	return bs;
 }
 
+Expression* parseFunctionLiteralExpr(Parser* parser) {
+	Expression* expr = createExpression(EXPR_FUNCTION, parser->curToken);
+
+	if(!expectPeek(parser, TokenTypeLParen)) {
+		return NULL;
+	}
+
+	expr->function.parameters = parseFunctionParameters(parser);
+
+	if(!expectPeek(parser, TokenTypeLSquirly)) {
+		return NULL;
+	}
+
+	expr->function.body = parseBlockStatement(parser);
+
+	return expr;
+}
+
+struct IdentifierList parseFunctionParameters(Parser* parser) {
+	struct IdentifierList params = { NULL, 0, 0 };
+
+	if(peekTokenIs(parser, TokenTypeRParen)) {
+		setParserNextToken(parser);
+		return params;
+	}
+
+	setParserNextToken(parser);
+
+	Identifier ident;
+	ident.token = parser->curToken;
+	strcpy_s(ident.value, MAX_IDENT_LENGTH, parser->curToken.literal);
+
+	params.values = (Identifier*) malloc(1000000);
+
+	if (!params.values) {
+		perror("OUT OF MEMORY");
+	}
+
+	params.values[params.size] = ident;
+	params.size++;
+
+	while(peekTokenIs(parser, TokenTypeComma)) {
+		setParserNextToken(parser);
+		setParserNextToken(parser);
+
+		ident.token = parser->curToken;
+		strcpy_s(ident.value, MAX_IDENT_LENGTH, parser->curToken.literal);
+
+		params.values[params.size] = ident;
+		params.size++;
+	}
+
+	if(!expectPeek(parser, TokenTypeRParen)) {
+		perror("NOT VALID SYNTAX");
+	}
+
+	return params;
+}
 void peekError(Parser* parser, TokenType type) {
 	char* msg = (char*) malloc(128 * sizeof(char));
 	if (!msg) {
