@@ -1,12 +1,10 @@
 #include "gtest/gtest.h"
 
 extern "C" {
-#include "lexer/lexer.h"
-#include "lexer/lexer.c"
-#include "parser/parser.h"
-#include "parser/parser.c"
-#include "parser/ast.h"
-#include "parser/ast.c"
+	#include "parser/parser.h"
+	#include "parser/parser.c"
+	#include "parser/ast.h"
+	#include "parser/ast.c"
 }
 
 bool testIntegerLiteral(Expression* expr, int64_t integerVal) {
@@ -143,209 +141,6 @@ void checkParserErrors(Parser* parser) {
 	FAIL();
 }
 
-TEST(TestLexer, TestNextToken_01) {
-	const char* input = "=+(){},;";
-	Lexer lexer = createLexer(input);
-
-	constexpr Token expectedTokens[]{
-		{TokenTypeAssign, "="},
-		{TokenTypePlus, "+"},
-		{TokenTypeLParen, "("},
-		{TokenTypeRParen, ")"},
-		{TokenTypeLSquirly, "{"},
-		{TokenTypeRSquirly, "}"},
-		{TokenTypeComma, ","},
-		{TokenTypeSemicolon, ";"},
-		{TokenTypeEof, ""},
-	};
-
-	constexpr int expectedLength = 9;
-
-	for (int i = 0; i < expectedLength; i++) {
-		Token token = nextToken(&lexer);
-		ASSERT_EQ(token.type, expectedTokens[i].type);
-		ASSERT_STREQ(token.literal, expectedTokens[i].literal);
-	}
-}
-
-TEST(TestLexer, TestNextToken_02) {
-	const char* input = "let five = 5;"
-		"let ten = 10;"
-		"let add = fn(x, y) { x + y; };"
-		"let result = add(five, ten);";
-
-	Lexer lexer = createLexer(input);
-
-	constexpr Token expectedTokens[]{
-		{TokenTypeLet, "let"},
-		{TokenTypeIdent, "five"},
-		{TokenTypeAssign, "="},
-		{TokenTypeInt, "5"},
-		{TokenTypeSemicolon, ";"},
-		{TokenTypeLet, "let"},
-		{TokenTypeIdent, "ten"},
-		{TokenTypeAssign, "="},
-		{TokenTypeInt, "10"},
-		{TokenTypeSemicolon, ";"},
-		{TokenTypeLet, "let"},
-		{TokenTypeIdent, "add"},
-		{TokenTypeAssign, "="},
-		{TokenTypeFunction, "fn"},
-		{TokenTypeLParen, "("},
-		{TokenTypeIdent, "x"},
-		{TokenTypeComma, ","},
-		{TokenTypeIdent, "y"},
-		{TokenTypeRParen, ")"},
-		{TokenTypeLSquirly, "{"},
-		{TokenTypeIdent, "x"},
-		{TokenTypePlus, "+"},
-		{TokenTypeIdent, "y"},
-		{TokenTypeSemicolon, ";"},
-		{TokenTypeRSquirly, "}"},
-		{TokenTypeSemicolon, ";"},
-		{TokenTypeLet, "let"},
-		{TokenTypeIdent, "result"},
-		{TokenTypeAssign, "="},
-		{TokenTypeIdent, "add"},
-		{TokenTypeLParen, "("},
-		{TokenTypeIdent, "five"},
-		{TokenTypeComma, ","},
-		{TokenTypeIdent, "ten"},
-		{TokenTypeRParen, ")"},
-		{TokenTypeSemicolon, ";"},
-		{TokenTypeEof, ""},
-	};
-
-	constexpr int expectedLength = sizeof(expectedTokens) / sizeof(expectedTokens[0]);
-
-	for (int i = 0; i < expectedLength; i++) {
-		Token token = nextToken(&lexer);
-		printf("Token: \n");
-		printf("\tliteral: %s\n", token.literal);
-		printf("\ttype: %d\n", token.type);
-		printf("Expected Token: \n");
-		printf("\tliteral: %s\n", expectedTokens[i].literal);
-		printf("\ttype: %d\n", expectedTokens[i].type);
-		printf("------------------------- \n");
-
-		ASSERT_EQ(token.type, expectedTokens[i].type);
-		ASSERT_STREQ(token.literal, expectedTokens[i].literal);
-	}
-}
-
-TEST(TestLexer, TestNextToken_03) {
-	const char* input = "let five = 5;"
-		"let ten = 10;"
-		"let add = fn(x, y) { x + y; };"
-		"let result = add(five, ten);"
-		"!-/*5;"
-		"5 < 10 > 5;"
-		"if (5 < 10) {"
-		"return true;"
-		"}"
-		"else {"
-		"return false;"
-		"}"
-		"10 == 10;"
-		"10 != 9;";
-
-	Lexer lexer = createLexer(input);
-
-	constexpr Token expectedTokens[]{
-		{TokenTypeLet, "let"},
-		{TokenTypeIdent, "five"},
-		{TokenTypeAssign, "="},
-		{TokenTypeInt, "5"},
-		{TokenTypeSemicolon, ";"},
-		{TokenTypeLet, "let"},
-		{TokenTypeIdent, "ten"},
-		{TokenTypeAssign, "="},
-		{TokenTypeInt, "10"},
-		{TokenTypeSemicolon, ";"},
-		{TokenTypeLet, "let"},
-		{TokenTypeIdent, "add"},
-		{TokenTypeAssign, "="},
-		{TokenTypeFunction, "fn"},
-		{TokenTypeLParen, "("},
-		{TokenTypeIdent, "x"},
-		{TokenTypeComma, ","},
-		{TokenTypeIdent, "y"},
-		{TokenTypeRParen, ")"},
-		{TokenTypeLSquirly, "{"},
-		{TokenTypeIdent, "x"},
-		{TokenTypePlus, "+"},
-		{TokenTypeIdent, "y"},
-		{TokenTypeSemicolon, ";"},
-		{TokenTypeRSquirly, "}"},
-		{TokenTypeSemicolon, ";"},
-		{TokenTypeLet, "let"},
-		{TokenTypeIdent, "result"},
-		{TokenTypeAssign, "="},
-		{TokenTypeIdent, "add"},
-		{TokenTypeLParen, "("},
-		{TokenTypeIdent, "five"},
-		{TokenTypeComma, ","},
-		{TokenTypeIdent, "ten"},
-		{TokenTypeRParen, ")"},
-		{TokenTypeSemicolon, ";"},
-		{TokenTypeBang, "!"},
-		{TokenTypeMinus, "-"},
-		{TokenTypeSlash, "/"},
-		{TokenTypeAsterisk, "*"},
-		{TokenTypeInt, "5"},
-		{TokenTypeSemicolon, ";"},
-		{TokenTypeInt, "5"},
-		{TokenTypeLT, "<"},
-		{TokenTypeInt, "10"},
-		{TokenTypeGT, ">"},
-		{TokenTypeInt, "5"},
-		{TokenTypeSemicolon, ";"},
-		{TokenTypeIf, "if"},
-		{TokenTypeLParen, "("},
-		{TokenTypeInt, "5"},
-		{TokenTypeLT, "<"},
-		{TokenTypeInt, "10"},
-		{TokenTypeRParen, ")"},
-		{TokenTypeLSquirly, "{"},
-		{TokenTypeReturn, "return"},
-		{TokenTypeTrue, "true"},
-		{TokenTypeSemicolon, ";"},
-		{TokenTypeRSquirly, "}"},
-		{TokenTypeElse, "else"},
-		{TokenTypeLSquirly, "{"},
-		{TokenTypeReturn, "return"},
-		{TokenTypeFalse, "false"},
-		{TokenTypeSemicolon, ";"},
-		{TokenTypeRSquirly, "}"},
-		{TokenTypeInt, "10"},
-		{TokenTypeEqual, "=="},
-		{TokenTypeInt, "10"},
-		{TokenTypeSemicolon, ";"},
-		{TokenTypeInt, "10"},
-		{TokenTypeNotEqual, "!="},
-		{TokenTypeInt, "9"},
-		{TokenTypeSemicolon, ";"},
-		{TokenTypeEof, ""},
-	};
-
-
-	constexpr int expectedLength = sizeof(expectedTokens) / sizeof(expectedTokens[0]);
-
-	for (int i = 0; i < expectedLength; i++) {
-		Token token = nextToken(&lexer);
-		printf("Token: \n");
-		printf("\tliteral: %s\n", token.literal);
-		printf("\ttype: %d\n", token.type);
-		printf("Expected Token: \n");
-		printf("\tliteral: %s\n", expectedTokens[i].literal);
-		printf("\ttype: %d\n", expectedTokens[i].type);
-		printf("------------------------- \n");
-
-		ASSERT_EQ(token.type, expectedTokens[i].type);
-		ASSERT_STREQ(token.literal, expectedTokens[i].literal);
-	}
-}
-
 
 TEST(TestParser, TestParser_01_let) {
 	//const char* input = "let x = 5;"
@@ -393,7 +188,7 @@ TEST(TestParser, TestParser_01_let) {
 		if (!testLiteralExpression(stmt.expr, letTests[i].expected)) {
 			FAIL();
 		}
-		
+
 	}
 }
 
@@ -447,7 +242,7 @@ TEST(TestParser, TestParser_02_ret) {
 		}
 	}
 
-	
+
 }
 
 TEST(TestParser, TestParser_03_Ident) {
@@ -864,23 +659,23 @@ TEST(TestParser, TestParser_09_IfExpression) {
 		FAIL();
 	}
 
-	if (!testInfixExpression(stmt.expr->ifelse.condition, {.stringValue = {"x"}}, OP_LT, { .stringValue = {"y"} })) {
+	if (!testInfixExpression(stmt.expr->ifelse.condition, { .stringValue = {"x"} }, OP_LT, { .stringValue = {"y"} })) {
 		FAIL();
 	}
 
 	BlockStatement* consequence = stmt.expr->ifelse.consequence;
 
-	if(!consequence) {
+	if (!consequence) {
 		printf("Expected consequence block statement, got NULL\n");
 		FAIL();
 	}
 
-	if(consequence->size != 1) {
+	if (consequence->size != 1) {
 		printf("Consequence does not contain 1 statement, got %llu\n", consequence->size);
 		FAIL();
 	}
 
-	if(consequence->statements[0].type != STMT_EXPR) {
+	if (consequence->statements[0].type != STMT_EXPR) {
 		printf("Statements[0] is not an expression statement, got %d", consequence->statements[0].type);
 		FAIL();
 	}
@@ -889,7 +684,7 @@ TEST(TestParser, TestParser_09_IfExpression) {
 		FAIL();
 	}
 
-	if(stmt.expr->ifelse.alternative) {
+	if (stmt.expr->ifelse.alternative) {
 		printf("Alternative statement is not NULL, expected NULL");
 		FAIL();
 	}
@@ -1005,12 +800,12 @@ TEST(TestParser, TestParser_11_FunctionLiteral) {
 
 	FunctionLiteral fn = stmt.expr->function;
 
-	if(fn.parameters.size != 2) {
+	if (fn.parameters.size != 2) {
 		printf("Function literal parameters wrong. want 2, got=%llu", fn.parameters.size);
 		FAIL();
 	}
 
-	if(strcmp(fn.parameters.values[0].value, "x") != 0) {
+	if (strcmp(fn.parameters.values[0].value, "x") != 0) {
 		printf("Invalid parameter[0]: expected 'x', got %s", fn.parameters.values[0].value);
 		FAIL();
 	}
@@ -1020,12 +815,12 @@ TEST(TestParser, TestParser_11_FunctionLiteral) {
 		FAIL();
 	}
 
-	if(fn.body->size != 1) {
+	if (fn.body->size != 1) {
 		printf("Function body statements not equal to 1, got %lld", fn.body->size);
 		FAIL();
 	}
 
-	if(fn.body->statements[0].type != STMT_EXPR) {
+	if (fn.body->statements[0].type != STMT_EXPR) {
 		printf("function body statement is not an Expression statement, got %d", fn.body->statements[0].type);
 		FAIL();
 	}
@@ -1075,7 +870,7 @@ TEST(TestParser, TestParser_12_FunctionParameters) {
 			FAIL();
 		}
 
-		for(size_t j = 0; j < tests[i].expectedSize; j++) {
+		for (size_t j = 0; j < tests[i].expectedSize; j++) {
 			if (strcmp(fn.parameters.values[j].value, tests[i].expectedParams[j]) != 0) {
 				printf("Invalid parameter: expected '%s', got %s\n", tests[i].expectedParams[j], fn.parameters.values[j].value);
 				FAIL();
@@ -1134,10 +929,10 @@ TEST(TestParser, TestParser_13_CallExpression) {
 		FAIL();
 	}
 
-	if (!testInfixExpression(call.arguments.values[2], { 4 }, OP_ADD, { 5 })){
+	if (!testInfixExpression(call.arguments.values[2], { 4 }, OP_ADD, { 5 })) {
 		FAIL();
 	}
-	
+
 }
 
 

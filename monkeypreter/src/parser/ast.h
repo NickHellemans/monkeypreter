@@ -136,5 +136,6 @@ typedef struct SProgram {
 
 
 char* programToStr(const Program* program);
-void statementToStr(char* str, const Statement* stmt);
 enum OperatorType parseOperator(TokenType tokenType);
+//Free memory
+void freeProgram(Program* program);

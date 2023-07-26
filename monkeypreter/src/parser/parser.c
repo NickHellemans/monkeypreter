@@ -1,7 +1,31 @@
 #include "parser.h"
-
 #include <stdio.h>
 #include <string.h>
+
+//Internal declarations
+void setParserNextToken(Parser* parser);
+Expression* createExpression(enum ExpressionType type, Token token);
+Statement parseStatement(Parser* parser);
+Statement parseLetStatement(Parser* parser);
+Statement parseRetStatement(Parser* parser);
+Statement parseExprStatement(Parser* parser);
+Expression* parseExpr(Parser* parser, enum Precedence precedence);
+Expression* parseIdentExpr(Parser* parser);
+Expression* parseIntegerLiteralExpr(Parser* parser);
+Expression* parsePrefixExpr(Parser* parser);
+Expression* parseInfixExpr(Parser* parser, Expression* left);
+Expression* parseBoolExpr(Parser* parser);
+Expression* parseGroupedExpr(Parser* parser);
+Expression* parseIfExpression(Parser* parser);
+struct BlockStatement* parseBlockStatement(Parser* parser);
+Expression* parseFunctionLiteralExpr(Parser* parser);
+struct IdentifierList parseFunctionParameters(Parser* parser);
+Expression* parseCallExpression(Parser* parser, Expression* left);
+struct ExpressionList parseCallExprParameters(Parser* parser);
+void peekError(Parser* parser, TokenType type);
+bool expectPeek(Parser* parser, TokenType tokenType);
+bool curTokenIs(Parser* parser, TokenType tokenType);
+bool peekTokenIs(Parser* parser, TokenType tokenType);
 
 enum Precedence {
 	LOWEST = 1,
@@ -45,7 +69,9 @@ Parser createParser(Lexer* lexer) {
 	Parser parser;
 	parser.lexer = lexer;
 	parser.errorsLen = 0;
-	parser.errors = (char**) malloc(1000000);
+	//Init with space for 5 strings
+	parser.errorsCap = 5;
+	parser.errors = (char**) malloc(parser.errorsCap * sizeof *parser.errors);
 
 	//Read 2 tokens so cur & peek are set
 	setParserNextToken(&parser);
@@ -55,7 +81,7 @@ Parser createParser(Lexer* lexer) {
 }
 
 Expression* createExpression(enum ExpressionType type, Token token) {
-	Expression* expr = (Expression*) malloc(sizeof(Expression));
+	Expression* expr = (Expression*) malloc(sizeof *expr);
 	if (!expr) {
 		perror("OUT OF MEMORY");
 		return NULL;
@@ -72,9 +98,10 @@ struct BlockStatement* createBlockStatement(Token token) {
 		return NULL;
 	}
 	bs->token = token;
-	bs->cap = 0;
+	bs->cap = 5;
 	bs->size = 0;
-	bs->statements = (Statement*) malloc(1000000);
+	bs->statements = (Statement*) malloc(bs->cap * sizeof *bs->statements);
+
 	if (!bs->statements) {
 		perror("OUT OF MEMORY");
 		return NULL;
@@ -88,23 +115,32 @@ void setParserNextToken(Parser* parser) {
 }
 
 Program* parseProgram(Parser* parser) {
-	Program* program = (Program*) malloc(sizeof(Statement*) + 2 * sizeof(size_t));
+	Program* program = (Program*) malloc(sizeof *program);
 	if(!program) {
 		return NULL;
 	}
 
-	program->statements = (Statement*) malloc(1000000);
+	program->size = 0;
+	program->cap = 100;
+	program->statements = (Statement*) malloc(program->cap * sizeof *program->statements);
 
 	if (!program->statements) {
 		return NULL;
 	}
 
-	program->size = 0;
-	program->cap = 0;
-
 	while (!curTokenIs(parser, TokenTypeEof)) {
 		Statement stmt = parseStatement(parser);
 		if (stmt.type != STMT_ILLEGAL) {
+			//Double size if needed
+			if(program->size >= program->cap) {
+				program->cap *= 2;
+				Statement* tmp = (Statement*) realloc(program->statements, program->cap * sizeof * program->statements);
+				if(!tmp) {
+					return NULL;
+				}
+				program->statements = tmp;
+			}
+
 			program->statements[program->size] = stmt;
 			program->size++;
 		}
@@ -257,6 +293,7 @@ Expression* parseIntegerLiteralExpr(Parser* parser) {
 	Expression* expr = createExpression(EXPR_INT, parser->curToken);
 	expr->integer = 0;
 	const char* s = expr->token.literal;
+	//Cast to int from string
 	for (int i = 0; s[i] != '\0'; i++) {
 		expr->integer = expr->integer * 10 + (s[i] - 48);
 	}
@@ -265,6 +302,7 @@ Expression* parseIntegerLiteralExpr(Parser* parser) {
 
 Expression* parsePrefixExpr(Parser* parser) {
 	Expression* expr = createExpression(EXPR_PREFIX, parser->curToken);
+	expr->prefix.token = parser->curToken;
 	expr->prefix.operatorType = parseOperator(expr->token.type);
 	setParserNextToken(parser);
 	expr->prefix.right = parseExpr(parser, (enum Precedence)PREFIX);
@@ -273,6 +311,7 @@ Expression* parsePrefixExpr(Parser* parser) {
 
 Expression* parseInfixExpr(Parser* parser, Expression* left) {
 	Expression* expr = createExpression(EXPR_INFIX, parser->curToken);
+	expr->infix.token = parser->curToken;
 	expr->infix.operatorType = parseOperator(expr->token.type);
 	expr->infix.left = left;
 
@@ -305,6 +344,7 @@ Expression* parseGroupedExpr(Parser* parser) {
 
 Expression* parseIfExpression(Parser* parser) {
 	Expression* expr = createExpression(EXPR_IF, parser->curToken);
+	expr->ifelse.token = parser->curToken;
 
 	if(!expectPeek(parser, TokenTypeLParen)) {
 		return NULL;
@@ -343,6 +383,16 @@ struct BlockStatement* parseBlockStatement(Parser* parser) {
 	while(!curTokenIs(parser, TokenTypeRSquirly) && !curTokenIs(parser, TokenTypeEof)) {
 		Statement stmt = parseStatement(parser);
 		if(stmt.type != STMT_ILLEGAL) {
+
+			if(bs->size >= bs->cap) {
+				bs->cap *= 2;
+				Statement* tmp = (Statement*)realloc(bs->statements, bs->cap * sizeof * bs->statements);
+				if(!tmp) {
+					perror("OUT OF MEMORY");
+					abort();
+				}
+				bs->statements = tmp;
+			}
 			bs->statements[bs->size] = stmt;
 			bs->size++;
 		}
@@ -353,6 +403,7 @@ struct BlockStatement* parseBlockStatement(Parser* parser) {
 
 Expression* parseFunctionLiteralExpr(Parser* parser) {
 	Expression* expr = createExpression(EXPR_FUNCTION, parser->curToken);
+	expr->function.token = parser->curToken;
 
 	if(!expectPeek(parser, TokenTypeLParen)) {
 		return NULL;
@@ -370,7 +421,7 @@ Expression* parseFunctionLiteralExpr(Parser* parser) {
 }
 
 struct IdentifierList parseFunctionParameters(Parser* parser) {
-	struct IdentifierList params = { NULL, 0, 0 };
+	struct IdentifierList params = { NULL, 0, 1 };
 
 	if(peekTokenIs(parser, TokenTypeRParen)) {
 		setParserNextToken(parser);
@@ -383,7 +434,7 @@ struct IdentifierList parseFunctionParameters(Parser* parser) {
 	ident.token = parser->curToken;
 	strcpy_s(ident.value, MAX_IDENT_LENGTH, parser->curToken.literal);
 
-	params.values = (Identifier*) malloc(1000000);
+	params.values = (Identifier*) malloc(params.cap * sizeof *params.values);
 
 	if (!params.values) {
 		perror("OUT OF MEMORY");
@@ -399,6 +450,16 @@ struct IdentifierList parseFunctionParameters(Parser* parser) {
 		ident.token = parser->curToken;
 		strcpy_s(ident.value, MAX_IDENT_LENGTH, parser->curToken.literal);
 
+		if(params.size >= params.cap) {
+			params.cap *= 2;
+			Identifier* tmp = (Identifier*)realloc(params.values, params.cap * sizeof * params.values);
+			if (!tmp) {
+				perror("OUT OF MEMORY");
+				abort();
+			}
+			params.values = tmp;
+		}
+
 		params.values[params.size] = ident;
 		params.size++;
 	}
@@ -412,13 +473,14 @@ struct IdentifierList parseFunctionParameters(Parser* parser) {
 
 Expression* parseCallExpression(Parser* parser, Expression* left) {
 	Expression* expr = createExpression(EXPR_CALL, parser->curToken);
+	expr->call.token = parser->curToken;
 	expr->call.function = left;
 	expr->call.arguments = parseCallExprParameters(parser);
 	return expr;
 }
 
 struct ExpressionList parseCallExprParameters(Parser* parser) {
-	struct ExpressionList params = { NULL, 0, 0 };
+	struct ExpressionList params = { NULL, 0, 1};
 
 	if (peekTokenIs(parser, TokenTypeRParen)) {
 		setParserNextToken(parser);
@@ -427,7 +489,7 @@ struct ExpressionList parseCallExprParameters(Parser* parser) {
 
 	setParserNextToken(parser);
 
-	params.values = (Expression**) malloc(1000000);
+	params.values = (Expression**) malloc(params.cap * sizeof(Expression*));
 
 	if (!params.values) {
 		perror("OUT OF MEMORY");
@@ -439,6 +501,16 @@ struct ExpressionList parseCallExprParameters(Parser* parser) {
 	while (peekTokenIs(parser, TokenTypeComma)) {
 		setParserNextToken(parser);
 		setParserNextToken(parser);
+
+		if (params.size >= params.cap) {
+			params.cap *= 2;
+			Expression** tmp = (Expression**)realloc(params.values, params.cap * sizeof(Expression*));
+			if (!tmp) {
+				perror("OUT OF MEMORY");
+				abort();
+			}
+			params.values = tmp;
+		}
 
 		params.values[params.size] = parseExpr(parser, (enum Precedence)LOWEST);
 		params.size++;
@@ -453,12 +525,23 @@ struct ExpressionList parseCallExprParameters(Parser* parser) {
 }
 void peekError(Parser* parser, TokenType type) {
 	char* msg = (char*) malloc(128 * sizeof(char));
+
 	if (!msg) {
+		perror("peekError: OUT OF MEMORY");
 		return;
 	}
 
 	int success = sprintf_s(msg, 128 * sizeof(char), "expected next token to be: %d, got: %d instead", type, parser->peekToken.type);
 
+	if(parser->errorsLen >= parser->errorsCap) {
+		parser->errorsCap *= 2;
+		char** tmp = (char**)realloc(parser->errors, parser->errorsCap * sizeof * parser->errors);
+		if(!tmp) {
+			free(msg);
+			return;
+		}
+		parser->errors = tmp;
+	}
 	parser->errors[parser->errorsLen] = msg;
 	parser->errorsLen++;
 }
@@ -483,3 +566,9 @@ bool peekTokenIs(Parser* parser, TokenType tokenType) {
 	return parser->peekToken.type == tokenType;
 }
 
+void freeParser(Parser* parser) {
+	for(size_t i = 0; i < parser->errorsLen; i++) {
+		free(parser->errors[i]);
+	}
+	free(parser->errors);
+}

@@ -168,7 +168,7 @@ void readChar(Lexer* lexer)
 		lexer->ch = lexer->input[lexer->readPosition];
 	}
 
-	lexer->position = lexer->readPosition;
+	lexer->position = (int) lexer->readPosition;
 	lexer->readPosition++;
 }
 

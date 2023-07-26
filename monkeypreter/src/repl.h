@@ -4,13 +4,11 @@
 #include "lexer/lexer.h"
 #include "parser/parser.h"
 
-
-
 inline void printParserErrors(Parser* parser) {
 	printf("Oopsie daisy! We ran into some monkey business!\n");
 	printf("Parser errors\n");
 	for (size_t i = 0; i < parser->errorsLen; i++) {
-		printf("\t - Parser error %llu: %s\n", i, parser->errors[i]);
+		printf("\t - Parser error %llu: %s\n", i + 1, parser->errors[i]);
 	}
 }
 
@@ -19,7 +17,7 @@ inline void repl(void) {
 	while (true) {
 		char inputBuffer[100];
 		printf(">> ");
-		char* succes = fgets(inputBuffer, sizeof(inputBuffer), stdin);
+		char* success = fgets(inputBuffer, sizeof(inputBuffer), stdin);
 		Lexer lexer = createLexer(inputBuffer);
 		Parser parser = createParser(&lexer);
 		Program* program = parseProgram(&parser);
@@ -36,13 +34,11 @@ inline void repl(void) {
 
 		char* progmanStr = programToStr(program);
 		printf("%s\n", progmanStr);
-		free(progmanStr);
-
 		printf("\n");
-		/*Token token = nextToken(&lexer);
-		while(succes && token.type != TokenTypeEof) {
-			printf("{Type: %s, Literal: %s}\n", tokenTypeToStr(token.type), token.literal);
-			token = nextToken(&lexer);
-		}*/
+
+		//Clean up memory
+		free(progmanStr);
+		freeProgram(program);
+		freeParser(&parser);
 	}
 }

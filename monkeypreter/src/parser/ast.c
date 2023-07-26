@@ -3,6 +3,81 @@
 #include <string.h>
 
 #define MAX_PROGRAM_LEN 1000000
+
+//Internal declarations
+void freeStatements(Statement* stmts, size_t size);
+void freeExpression(Expression* expr);
+void freeBlockStatement(struct BlockStatement* bs);
+void statementToStr(char* str, const Statement* stmt);
+
+
+void freeProgram(Program* program) {
+	freeStatements(program->statements, program->size);
+	free(program);
+}
+
+void freeStatements(Statement* stmts, size_t size) {
+	for(size_t i = 0; i < size; i++) {
+		freeExpression(stmts[i].expr);
+	}
+	free(stmts);
+}
+
+void freeExpression(Expression* expr) {
+
+	if(!expr) {
+		return;
+	}
+
+	switch (expr->type) {
+		case EXPR_INFIX: 
+			freeExpression(expr->infix.left);
+			freeExpression(expr->infix.right);
+			break;
+
+		case EXPR_PREFIX: 
+			freeExpression(expr->infix.right);
+			break;
+
+		case EXPR_IF: 
+			free(expr->ifelse.condition);
+			freeBlockStatement(expr->ifelse.consequence);
+			freeBlockStatement(expr->ifelse.alternative);
+			break;
+
+		case EXPR_FUNCTION: 
+			free(expr->function.parameters.values);
+			freeBlockStatement(expr->function.body);
+			break;
+
+		case EXPR_CALL: 
+			for(size_t i = 0; i < expr->call.arguments.size; i++) {
+				freeExpression(expr->call.arguments.values[i]);
+			}
+			free(expr->call.arguments.values);
+			freeExpression(expr->call.function);
+			break;
+
+		case EXPR_INT:
+		case EXPR_IDENT: 
+		case EXPR_BOOL: 
+			//Nothing to free for these expressions
+			break;
+	}
+	
+	free(expr);
+}
+
+void freeBlockStatement(struct BlockStatement* bs) {
+
+	if(!bs) {
+		return;
+	}
+
+	freeStatements(bs->statements, bs->size);
+	free(bs);
+}
+
 void exprStatementToStr(char* str, Expression* expr);
 
 char* programToStr(const Program* program) {
@@ -41,7 +116,9 @@ void retStatementToStr(char* str, const Statement* stmt) {
 
 void blockStatementToStr(char* str, const struct BlockStatement* bs) {
 	for(size_t i = 0; i < bs->size; i++) {
+		strcat_s(str, MAX_PROGRAM_LEN, "{");
 		statementToStr(str, &bs->statements[i]);
+		strcat_s(str, MAX_PROGRAM_LEN, "}");
 	}
 }
 
