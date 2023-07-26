@@ -33,6 +33,9 @@ enum Precedence getTokenPrecedence(Token token) {
 		case TokenTypeAsterisk:
 			return PRODUCT;
 
+		case TokenTypeLParen:
+			return CALL;
+
 		default:
 			return LOWEST;
 	}
@@ -50,6 +53,7 @@ Parser createParser(Lexer* lexer) {
 
 	return parser;
 }
+
 Expression* createExpression(enum ExpressionType type, Token token) {
 	Expression* expr = (Expression*) malloc(sizeof(Expression));
 	if (!expr) {
@@ -88,11 +92,13 @@ Program* parseProgram(Parser* parser) {
 	if(!program) {
 		return NULL;
 	}
+
 	program->statements = (Statement*) malloc(1000000);
 
 	if (!program->statements) {
 		return NULL;
 	}
+
 	program->size = 0;
 	program->cap = 0;
 
@@ -223,6 +229,11 @@ Expression* parseExpr(Parser* parser, enum Precedence precedence) {
 			case TokenTypeGT:
 				setParserNextToken(parser);
 				leftExpr = parseInfixExpr(parser, leftExpr);
+				break;
+
+			case TokenTypeLParen:
+				setParserNextToken(parser);
+				leftExpr = parseCallExpression(parser, leftExpr);
 				break;
 
 			default:
@@ -391,6 +402,48 @@ struct IdentifierList parseFunctionParameters(Parser* parser) {
 	}
 
 	if(!expectPeek(parser, TokenTypeRParen)) {
+		perror("NOT VALID SYNTAX");
+	}
+
+	return params;
+}
+
+Expression* parseCallExpression(Parser* parser, Expression* left) {
+	Expression* expr = createExpression(EXPR_CALL, parser->curToken);
+	expr->call.function = left;
+	expr->call.arguments = parseCallExprParameters(parser);
+	return expr;
+}
+
+struct ExpressionList parseCallExprParameters(Parser* parser) {
+	struct ExpressionList params = { NULL, 0, 0 };
+
+	if (peekTokenIs(parser, TokenTypeRParen)) {
+		setParserNextToken(parser);
+		return params;
+	}
+
+	setParserNextToken(parser);
+
+	params.values = (Expression**) malloc(1000000);
+
+	if (!params.values) {
+		perror("OUT OF MEMORY");
+	}
+
+	params.values[params.size] = parseExpr(parser, (enum Precedence) LOWEST);
+	params.size++;
+
+	while (peekTokenIs(parser, TokenTypeComma)) {
+		setParserNextToken(parser);
+		setParserNextToken(parser);
+
+		params.values[params.size] = parseExpr(parser, (enum Precedence)LOWEST);
+		params.size++;
+	}
+
+	if (!expectPeek(parser, TokenTypeRParen)) {
+		free(params.values);
 		perror("NOT VALID SYNTAX");
 	}
 

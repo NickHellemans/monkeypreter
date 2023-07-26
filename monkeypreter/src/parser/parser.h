@@ -33,6 +33,8 @@ Expression* parseIfExpression(Parser* parser);
 struct BlockStatement* parseBlockStatement(Parser* parser);
 Expression* parseFunctionLiteralExpr(Parser* parser);
 struct IdentifierList parseFunctionParameters(Parser* parser);
+Expression* parseCallExpression(Parser* parser, Expression* left);
+struct ExpressionList parseCallExprParameters(Parser* parser);
 void peekError(Parser* parser, TokenType type);
 bool expectPeek(Parser* parser, TokenType tokenType);
 bool curTokenIs(Parser* parser, TokenType tokenType);

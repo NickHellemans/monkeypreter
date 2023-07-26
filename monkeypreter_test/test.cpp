@@ -725,9 +725,22 @@ TEST(TestParser, TestParser_07_OperatorPrecedence) {
 			"!(true == true)",
 			"(!(true == true))",
 		},
+		//Call expressions
+		{
+		"a + add(b * c) + d",
+		"((a + add((b * c))) + d)",
+		},
+		{
+		"add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
+		"add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))",
+		},
+		{
+		"add(a + b + c * d / f + g)",
+		"add((((a + b) + ((c * d) / f)) + g))",
+		},
 	};
 
-	for (int i = 0; i < 22; i++) {
+	for (int i = 0; i < 25; i++) {
 		printf("At %d iteration\n", i);
 		printf("Input = %s\n", precedenceTests[i].input);
 		printf("Expected = %s\n", precedenceTests[i].expected);
@@ -1051,6 +1064,112 @@ TEST(TestParser, TestParser_12_FunctionParameters) {
 		for(size_t j = 0; j < tests[i].expectedSize; j++) {
 			if (strcmp(fn.parameters.values[j].value, tests[i].expectedParams[j]) != 0) {
 				printf("Invalid parameter: expected '%s', got %s\n", tests[i].expectedParams[j], fn.parameters.values[j].value);
+				FAIL();
+			}
+		}
+	}
+}
+
+TEST(TestParser, TestParser_13_CallExpression) {
+
+	const char* input = "add(1, 2 * 3, 4 + 5);";
+
+	Lexer lexer = createLexer(input);
+	Parser parser = createParser(&lexer);
+
+	Program* program = parseProgram(&parser);
+	checkParserErrors(&parser);
+
+	if (!program) {
+		printf("Parser returned NULL\n");
+		FAIL();
+	}
+
+	if (program->size != 1) {
+		printf("Program does not contain 1 statement, got %llu\n", program->size);
+		FAIL();
+	}
+
+	Statement stmt = program->statements[0];
+	if (stmt.type != STMT_EXPR) {
+		printf("Stmt not a expression statement, got %d", stmt.type);
+		FAIL();
+	}
+
+	if (stmt.expr->type != EXPR_CALL) {
+		printf("Expression not a call expression, got %d", stmt.expr->type);
+		FAIL();
+	}
+
+	CallExpression call = stmt.expr->call;
+
+	if (!testIdentifier(call.function, "add")) {
+		FAIL();
+	}
+
+	if (call.arguments.size != 3) {
+		printf("Call expression parameters wrong: want 3, got=%llu", call.arguments.size);
+		FAIL();
+	}
+
+	if (!testLiteralExpression(call.arguments.values[0], { 1 })) {
+		FAIL();
+	}
+
+	if (!testInfixExpression(call.arguments.values[1], { 2 }, OP_MULTIPLY, { 3 })) {
+		FAIL();
+	}
+
+	if (!testInfixExpression(call.arguments.values[2], { 4 }, OP_ADD, { 5 })){
+		FAIL();
+	}
+	
+}
+
+
+TEST(TestParser, TestParser_14_CallParameters) {
+
+	struct Test {
+		char input[16];
+		const char* expectedParams[3];
+		size_t expectedSize;
+	};
+
+	const Test tests[] = {
+		{"empty();", {}, 0},
+		{"add(x);", {"x"}, 1},
+		{"max(x, y, z);", {"x", "y", "z"}, 3},
+	};
+
+	for (int i = 0; i < 3; i++) {
+		printf("Starting test: %d\n", i);
+		Lexer lexer = createLexer(tests[i].input);
+		Parser parser = createParser(&lexer);
+
+		Program* program = parseProgram(&parser);
+		checkParserErrors(&parser);
+
+		if (!program) {
+			printf("Parser returned NULL\n");
+			FAIL();
+		}
+
+		if (program->size != 1) {
+			printf("Program does not contain 1 statement, got %llu\n", program->size);
+			FAIL();
+		}
+
+		Statement stmt = program->statements[0];
+		CallExpression call = stmt.expr->call;
+
+		if (call.arguments.size != tests[i].expectedSize) {
+			printf("Length call expression parameters wrong. want %llu, got=%llu\n", tests[i].expectedSize, call.arguments.size);
+			FAIL();
+		}
+
+		for (size_t j = 0; j < call.arguments.size; j++) {
+			if (strcmp(call.arguments.values[j]->ident.value, tests[i].expectedParams[j]) != 0) {
+				printf("Invalid parameter: expected '%s', got %s\n", tests[i].expectedParams[j], call.arguments.values[j]->ident.value);
 				FAIL();
 			}
 		}

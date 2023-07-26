@@ -86,6 +86,18 @@ struct FunctionLiteral {
     struct BlockStatement* body;
 };
 
+struct ExpressionList {
+    struct SExpression** values;
+    size_t size;
+    size_t cap;
+};
+
+struct CallExpression {
+    Token token;
+    struct SExpression* function;
+    struct ExpressionList arguments;
+};
+
 typedef struct SExpression {
     enum ExpressionType type;
 	Token token;
@@ -98,6 +110,7 @@ typedef struct SExpression {
         struct InfixExpression infix;
         struct IfExpression ifelse;
         struct FunctionLiteral function;
+        struct CallExpression call;
     };
 } Expression;
 

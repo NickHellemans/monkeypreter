@@ -44,7 +44,7 @@ void blockStatementToStr(char* str, const struct BlockStatement* bs) {
 	}
 }
 
-void exprStatementToStr(char* str, const Expression* expr) {
+void exprStatementToStr(char* str, Expression* expr) {
 	switch (expr->type) {
 		case EXPR_PREFIX:
 			strcat_s(str, MAX_PROGRAM_LEN, "(");
@@ -95,6 +95,18 @@ void exprStatementToStr(char* str, const Expression* expr) {
 			}
 			strcat_s(str, MAX_PROGRAM_LEN, ")");
 			blockStatementToStr(str, expr->function.body);
+			break;
+
+		case EXPR_CALL:
+			exprStatementToStr(str, expr->call.function);
+			strcat_s(str, MAX_PROGRAM_LEN, "(");
+			for (size_t i = 0; i < expr->call.arguments.size; i++) {
+				if (i > 0) {
+					strcat_s(str, MAX_PROGRAM_LEN, ", ");
+				}
+				exprStatementToStr(str, expr->call.arguments.values[i]);
+			}
+			strcat_s(str, MAX_PROGRAM_LEN, ")");
 			break;
 
 		default:
