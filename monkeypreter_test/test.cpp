@@ -51,7 +51,7 @@ bool testIdentifier(Expression* expr, const char* value) {
 
 bool testBoolean(Expression* expr, bool value) {
 	if (expr->type != EXPR_BOOL) {
-		printf("expression not a boolean expr, got %d\n", expr->type);
+		printf("expression not a boolVal expr, got %d\n", expr->type);
 		return false;
 	}
 
@@ -70,20 +70,16 @@ bool testBoolean(Expression* expr, bool value) {
 }
 
 typedef union {
-	int64_t integer;
-	bool boolean;
-	char* string;
-	Identifier ident;
-	struct PrefixExpression prefix;
-	struct InfixExpression infix;
-	struct IfExpression ifelse;
+	int64_t intValue;
+	bool boolVal;
+	char stringValue[MAX_IDENT_LENGTH];
 } ExpectedValue;
 
 bool testLiteralExpression(Expression* expr, ExpectedValue expected) {
 	switch (expr->type) {
-	case EXPR_INT: return testIntegerLiteral(expr, expected.integer);
-	case EXPR_IDENT: return testIdentifier(expr, expected.ident.value);
-	case EXPR_BOOL: return testBoolean(expr, expected.boolean);
+	case EXPR_INT: return testIntegerLiteral(expr, expected.intValue);
+	case EXPR_IDENT: return testIdentifier(expr, expected.stringValue);
+	case EXPR_BOOL: return testBoolean(expr, expected.boolVal);
 	default:
 		printf("Type of expr not handled, got %d", expr->type);
 		return false;
@@ -352,63 +348,90 @@ TEST(TestLexer, TestNextToken_03) {
 
 
 TEST(TestParser, TestParser_01_let) {
-	const char* input = "let x = 5;"
-		"let y = 10;"
-		"let foobar = 838383;";
+	//const char* input = "let x = 5;"
+	//	"let y = 10;"
+	//	"let foobar = 838383;";
 
-	Lexer lexer = createLexer(input);
-	Parser parser = createParser(&lexer);
+	struct LetTest {
+		char input[16];
+		char expectedIdentifier[MAX_IDENT_LENGTH];
+		ExpectedValue expected;
+	};
 
-	Program* program = parseProgram(&parser);
-	checkParserErrors(&parser);
+	LetTest letTests[]{
+	{"let x = 5;", "x", {5}},
+	{"let y = true;", "y", {.boolVal = true}},
+	{"let foobar = y;", "foobar", {.stringValue = "y"}},
+	};
 
-	if (!program) {
-		printf("Parser returned NULL\n");
-		FAIL();
-	}
-
-	if (program->size != 3) {
-		printf("Program does not contain 3 statements, got %llu\n", program->size);
-		FAIL();
-	}
-
-	std::string expectedIdents[] = {"x", "y", "foobar"};
 	for (int i = 0; i < 3; i++) {
-		Statement stmt = program->statements[i];
-		if (!testLetStatement(stmt, expectedIdents[i].c_str())) {
+
+		printf("Starting test %d\n", i);
+		Lexer lexer = createLexer(letTests[i].input);
+		Parser parser = createParser(&lexer);
+
+		Program* program = parseProgram(&parser);
+		checkParserErrors(&parser);
+
+		if (!program) {
+			printf("Parser returned NULL\n");
+			FAIL();
+		}
+
+		if (program->size != 1) {
+			printf("Program does not contain 1 statements, got %llu\n", program->size);
+			FAIL();
+		}
+
+		Statement stmt = program->statements[0];
+
+		if (!testLetStatement(stmt, letTests[i].expectedIdentifier)) {
 			printf("Test failed on statement: %d\n", i);
 			FAIL();
 		}
+
+		if (!testLiteralExpression(stmt.expr, letTests[i].expected)) {
+			FAIL();
+		}
+		
 	}
 }
 
 TEST(TestParser, TestParser_02_ret) {
-	const char* input = "return 5;"
-		"return 10;"
-		"return 993322;";
+	//const char* input = "return 5;"
+	//	"return 10;"
+	//	"return 993322;";
 
-	Lexer lexer = createLexer(input);
-	Parser parser = createParser(&lexer);
+	struct RetTest {
+		char input[16];
+		ExpectedValue expected;
+	};
 
-	Program* program = parseProgram(&parser);
-	checkParserErrors(&parser);
-
-	if (!program) {
-		printf("Parser returned NULL\n");
-		FAIL();
-	}
-
-	if (program->size != 3) {
-		printf("Program does not contain 3 statements, got %llu\n", program->size);
-		FAIL();
-	}
-
-	char* programStr = programToStr(program);
-	printf("%s", programStr);
-	free(programStr);
+	RetTest retTests[]{
+	{"return 5;", {5}},
+	{"return true;", {.boolVal = true}},
+	{"return y;", {.stringValue = "y"}},
+	};
 
 	for (int i = 0; i < 3; i++) {
-		Statement stmt = program->statements[i];
+
+		Lexer lexer = createLexer(retTests[i].input);
+		Parser parser = createParser(&lexer);
+
+		Program* program = parseProgram(&parser);
+		checkParserErrors(&parser);
+
+		if (!program) {
+			printf("Parser returned NULL\n");
+			FAIL();
+		}
+
+		if (program->size != 1) {
+			printf("Program does not contain 1 statement, got %llu\n", program->size);
+			FAIL();
+		}
+
+		Statement stmt = program->statements[0];
 		if (stmt.type != STMT_RETURN) {
 			printf("Stmt not a return statement, got %d", stmt.type);
 			continue;
@@ -418,7 +441,13 @@ TEST(TestParser, TestParser_02_ret) {
 			printf("Stmt token literal not 'return', got %s", stmt.token.literal);
 			FAIL();
 		}
+
+		if (!testLiteralExpression(stmt.expr, retTests[i].expected)) {
+			FAIL();
+		}
 	}
+
+	
 }
 
 TEST(TestParser, TestParser_03_Ident) {
@@ -574,7 +603,7 @@ TEST(TestParser, TestParser_06_InfixExpr) {
 		{"5 < 5;", {5}, OP_LT, {5}},
 		{"5 == 5;", {5}, OP_EQ, {5}},
 		{"5 != 5;", {5}, OP_NOT_EQ, {5}},
-		//Add boolean tests
+		//Add boolVal tests
 		{"true == true", {true}, OP_EQ, {true}},
 		{"true != false", {true}, OP_NOT_EQ, {false}},
 		{"false == false", {false}, OP_EQ, {false}},
@@ -835,12 +864,7 @@ TEST(TestParser, TestParser_09_IfExpression) {
 		FAIL();
 	}
 
-	ExpectedValue left;
-	strcpy_s(left.ident.value, "x");
-	ExpectedValue right;
-	strcpy_s(right.ident.value, "y");
-
-	if(!testInfixExpression(stmt.expr->ifelse.condition, left, OP_LT, right)) {
+	if (!testInfixExpression(stmt.expr->ifelse.condition, {.stringValue = {"x"}}, OP_LT, { .stringValue = {"y"} })) {
 		FAIL();
 	}
 
@@ -902,12 +926,7 @@ TEST(TestParser, TestParser_10_IfElseExpression) {
 		FAIL();
 	}
 
-	ExpectedValue left;
-	strcpy_s(left.ident.value, "x");
-	ExpectedValue right;
-	strcpy_s(right.ident.value, "y");
-
-	if (!testInfixExpression(stmt.expr->ifelse.condition, left, OP_LT, right)) {
+	if (!testInfixExpression(stmt.expr->ifelse.condition, { .stringValue = {"x"} }, OP_LT, { .stringValue = {"y"} })) {
 		FAIL();
 	}
 
@@ -1011,12 +1030,7 @@ TEST(TestParser, TestParser_11_FunctionLiteral) {
 		FAIL();
 	}
 
-	ExpectedValue left;
-	strcpy_s(left.ident.value, "x");
-	ExpectedValue right;
-	strcpy_s(right.ident.value, "y");
-
-	if (!testInfixExpression(fn.body->statements[0].expr, left, OP_ADD, right)) {
+	if (!testInfixExpression(fn.body->statements[0].expr, { .stringValue = {"x"} }, OP_ADD, { .stringValue = {"y"} })) {
 		FAIL();
 	}
 }

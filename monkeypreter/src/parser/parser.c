@@ -144,8 +144,10 @@ Statement parseLetStatement(Parser* parser) {
 		return stmt;
 	}
 
-	//Skip expression until ; 
-	while(!curTokenIs(parser, TokenTypeSemicolon)) {
+	setParserNextToken(parser);
+	stmt.expr = parseExpr(parser, (enum Precedence)LOWEST);
+
+	if(peekTokenIs(parser, TokenTypeSemicolon)) {
 		setParserNextToken(parser);
 	}
 
@@ -158,12 +160,12 @@ Statement parseRetStatement(Parser* parser) {
 	stmt.token = parser->curToken;
 
 	setParserNextToken(parser);
-	stmt.expr = createExpression(EXPR_INT, parser->curToken);
+	stmt.expr = parseExpr(parser, (enum Precedence) LOWEST);
 
-	//Skip expr
-	while(!curTokenIs(parser, TokenTypeSemicolon)) {
+	if(peekTokenIs(parser, TokenTypeSemicolon)) {
 		setParserNextToken(parser);
 	}
+
 	return stmt;
 }
 
