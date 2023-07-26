@@ -3,6 +3,7 @@
 #include <string.h>
 
 #define MAX_PROGRAM_LEN 1000000
+void exprStatementToStr(char* str, Expression* expr);
 
 char* programToStr(const Program* program) {
 	char* str = (char*) malloc(MAX_PROGRAM_LEN);
@@ -27,14 +28,14 @@ void letStatementToStr(char* str, const Statement* stmt) {
 	strcat_s(str, MAX_PROGRAM_LEN, " ");
 	strcat_s(str, MAX_PROGRAM_LEN, stmt->identifier.value);
 	strcat_s(str, MAX_PROGRAM_LEN, " = ");
-	strcat_s(str, MAX_PROGRAM_LEN, stmt->expr->token.literal);
+	exprStatementToStr(str, stmt->expr);
 	strcat_s(str, MAX_PROGRAM_LEN, ";");
 }
 
 void retStatementToStr(char* str, const Statement* stmt) {
 	strcat_s(str, MAX_PROGRAM_LEN, stmt->token.literal);
 	strcat_s(str, MAX_PROGRAM_LEN, " ");
-	strcat_s(str, MAX_PROGRAM_LEN, stmt->expr->token.literal);
+	exprStatementToStr(str, stmt->expr);
 	strcat_s(str, MAX_PROGRAM_LEN, ";");
 }
 

@@ -7,7 +7,7 @@
 
 int main(void)
 {
-    printf("Welcome to my Monkeypreter!\n");
+    printf("Welcome to the Monkeypreter!\n");
     repl();
 }
 
