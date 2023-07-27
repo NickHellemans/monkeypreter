@@ -130,12 +130,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="monkeypreter.c" />
+    <ClCompile Include="src\interpreter\object.c" />
     <ClCompile Include="src\lexer\lexer.c" />
     <ClCompile Include="src\parser\ast.c" />
     <ClCompile Include="src\parser\parser.c" />
     <ClCompile Include="src\parser\parser.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\interpreter\object.h" />
     <ClInclude Include="src\lexer\lexer.h" />
     <ClInclude Include="src\parser\ast.h" />
     <ClInclude Include="src\repl.h" />

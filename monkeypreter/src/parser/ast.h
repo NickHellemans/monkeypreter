@@ -1,8 +1,6 @@
 #pragma once
 #include <stdint.h>
-
 #include "../lexer/lexer.h"
-
 
 enum ExpressionType {
     EXPR_INFIX = 1,
@@ -67,7 +65,6 @@ struct IfExpression {
     struct BlockStatement* consequence;
     struct BlockStatement* alternative;
 };
-
 
 typedef struct SIdentifier {
 	Token token;

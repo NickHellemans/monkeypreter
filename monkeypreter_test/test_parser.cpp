@@ -2,9 +2,9 @@
 
 extern "C" {
 	#include "parser/parser.h"
-	#include "parser/parser.c"
+	//#include "parser/parser.c"
 	#include "parser/ast.h"
-	#include "parser/ast.c"
+	//#include "parser/ast.c"
 }
 
 bool testIntegerLiteral(Expression* expr, int64_t integerVal) {
