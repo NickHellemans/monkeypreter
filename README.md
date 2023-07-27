@@ -6,15 +6,14 @@ interpreter, using the language of all languages C.
 
 ### Parts:
 - Lexer: Done
-- Parser: Busy (if expressions and fn literals/calls left)
-- Evaluation: Not started
+- Parser: Done
+- Evaluation: Ongoing
   
 ### TO DO:
-- Free heap allocated memory in all structs / functions
-- Realloc memory with capacity functionality instead of big blob (program)
 - Error handling 
-- Check every created malloc ptr for null
-- Project structure
+	- Check every created malloc ptr for null
+ 	- Handle null checks: exit or return? 
+   	- Free memory before exit / return
 ## Monkey
 
 ### Features
