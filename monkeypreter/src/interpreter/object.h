@@ -24,3 +24,5 @@ const char* objectTypeToStr(const enum ObjectType type);
 struct Object evalProgram(Program* program);
 struct Object evalStatement(Statement* stmt);
 struct Object evalExpression(Expression* expr);
+struct Object evalPrefixExpression(enum OperatorType op, struct Object right);
+struct Object evalBangOperatorExpression(struct Object right);

@@ -14,8 +14,8 @@ struct Object testEval(char* input) {
 	Parser parser = createParser(&lexer);
 	Program* program = parseProgram(&parser);
 	const struct Object obj = evalProgram(program);
-	freeProgram(program);
-	freeParser(&parser);
+	//freeProgram(program);
+	//freeParser(&parser);
 	return obj;
 }
 
@@ -80,6 +80,31 @@ TEST(TestEval, TestEval_02_BoolExpr) {
 		if (!testBooleanObject(evaluated, tests[i].expected)) {
 			FAIL();
 		}
+	}
+
+}
+
+TEST(TestEval, TestEval_03_BangOperator) {
+	struct TestInteger {
+		char input[10];
+		bool expected;
+	} tests[]{
+		{"!true", false},
+		{"!false", true},
+		{"!5", false},
+		{"!!true", true},
+		{"!!false", false},
+		{"!!5", true},
+	};
+
+	for (int i = 0; i < 6; i++) {
+		printf("Starting test %d\n", i);
+		const struct Object evaluated = testEval(tests[i].input);
+		printf("Evaluated: %s\n", inspectObject(&evaluated));
+		if (!testBooleanObject(evaluated, tests[i].expected)) {
+			FAIL();
+		}
+		printf("Ended test %d\n\n", i);
 	}
 
 }

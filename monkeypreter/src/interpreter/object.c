@@ -48,13 +48,16 @@ const char* objectTypeToStr(const enum ObjectType type)
 
 struct Object evalProgram(Program* program) {
 	struct Object obj;
+	
 	for(size_t i =0; i < program->size; i++) {
 		obj = evalStatement(&program->statements[i]);
 	}
+
 	return obj;
 }
 
 struct Object evalStatement(Statement* stmt) {
+	struct Object obj;
 	switch (stmt->type) {
 	case STMT_EXPR:
 		return evalExpression(stmt->expr);
@@ -62,8 +65,10 @@ struct Object evalStatement(Statement* stmt) {
 
 	return NullObj;
 }
+
 struct Object evalExpression(Expression* expr) {
 	struct Object obj = NullObj;
+	
 	switch (expr->type) {
 		case EXPR_INT:
 			obj.type = OBJ_INT;
@@ -73,6 +78,34 @@ struct Object evalExpression(Expression* expr) {
 		case EXPR_BOOL:
 			return expr->boolean ? TrueObj : FalseObj;
 
+		case EXPR_PREFIX:
+			struct Object right = evalExpression(expr->prefix.right);
+			return evalPrefixExpression(expr->prefix.operatorType, right);
 	}
+
 	return obj;
+}
+
+struct Object evalPrefixExpression(enum OperatorType op, struct Object right) {
+	
+	switch (op) {
+		case OP_NEGATE:
+			return evalBangOperatorExpression(right);
+		default:
+			return NullObj;
+	}
+}
+
+struct Object evalBangOperatorExpression(struct Object right) {
+
+	switch (right.type) {
+		case OBJ_BOOL:
+			return right.value.boolean ? FalseObj : TrueObj;
+
+		case OBJ_NULL:
+			return TrueObj;
+
+		default:
+			return FalseObj;
+	}
 }
