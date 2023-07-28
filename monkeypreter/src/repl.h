@@ -3,6 +3,7 @@
 #include <string.h>
 #include "lexer/lexer.h"
 #include "parser/parser.h"
+#include "interpreter/object.h"
 
 inline void printParserErrors(Parser* parser) {
 	printf("Oopsie daisy! We ran into some monkey business!\n");
@@ -27,17 +28,23 @@ inline void repl(void) {
 			continue;
 		}
 
+		struct Object evaluated = evalProgram(program);
+
 		if (strncmp(inputBuffer, "exit", 4) == 0) {
 			printf("Exiting REPL...");
 			break;
 		}
 
-		char* progmanStr = programToStr(program);
-		printf("%s\n", progmanStr);
-		printf("\n");
+		//char* progmanStr = programToStr(program);
+		//printf("%s\n", progmanStr);
+		//printf("\n");
+
+		//if(evaluated.type != OBJ_NULL) {
+			printf("%s\n\n", inspectObject(&evaluated));
+		//}
 
 		//Clean up memory
-		free(progmanStr);
+		//free(progmanStr);
 		freeProgram(program);
 		freeParser(&parser);
 	}

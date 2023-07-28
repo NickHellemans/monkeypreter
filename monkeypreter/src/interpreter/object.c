@@ -21,14 +21,14 @@ char* inspectObject(const struct Object* obj) {
 	int success = 0;
 	switch (obj->type) {
 		case OBJ_NULL:
-			success = printf_s(msg, 128, "NULL");
+			success = sprintf_s(msg, 128, "NULL");
 			break;
 		case OBJ_INT:
-			success = printf_s(msg, 128,"%lld", obj->value.integer);
+			success = sprintf_s(msg, 128, "%lld", obj->value.integer);
 			break;
 
 		case OBJ_BOOL:
-			success = printf_s(msg, 128, "%d", obj->value.boolean);
+			success = sprintf_s(msg, 128, "%d", obj->value.boolean);
 			break;
 	}
 	return msg;
