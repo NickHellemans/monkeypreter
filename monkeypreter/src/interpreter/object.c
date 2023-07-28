@@ -23,12 +23,13 @@ char* inspectObject(const struct Object* obj) {
 		case OBJ_NULL:
 			success = sprintf_s(msg, 128, "NULL");
 			break;
+
 		case OBJ_INT:
 			success = sprintf_s(msg, 128, "%lld", obj->value.integer);
 			break;
 
 		case OBJ_BOOL:
-			success = sprintf_s(msg, 128, "%d", obj->value.boolean);
+			success = sprintf_s(msg, 128, "%s", obj->value.boolean ? "true" : "false");
 			break;
 	}
 	return msg;
@@ -67,6 +68,11 @@ struct Object evalExpression(Expression* expr) {
 		case EXPR_INT:
 			obj.type = OBJ_INT;
 			obj.value.integer = expr->integer;
+			break;
+
+		case EXPR_BOOL:
+			return expr->boolean ? TrueObj : FalseObj;
+
 	}
 	return obj;
 }

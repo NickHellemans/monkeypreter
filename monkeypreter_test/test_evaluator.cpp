@@ -22,11 +22,26 @@ struct Object testEval(char* input) {
 bool testIntegerObject(struct Object obj, int64_t expected) {
 
 	if(obj.type != OBJ_INT) {
-		printf("Object is not an integer, expected %s, got %s", objectTypeToStr(OBJ_INT), objectTypeToStr(obj.type));
+		printf("Object is not an integer, expected %s, got %s\n", objectTypeToStr(OBJ_INT), objectTypeToStr(obj.type));
 		return false;
 	}
 	if(obj.value.integer != expected) {
-		printf("Object has wrong value, expected %lld, got %lld", expected, obj.value.integer);
+		printf("Object has wrong value, expected %lld, got %lld\n", expected, obj.value.integer);
+		return false;
+	}
+
+	return true;
+}
+
+bool testBooleanObject(struct Object obj, bool expected) {
+
+	if (obj.type != OBJ_BOOL) {
+		printf("Object is not a bool, expected %s, got %s\n", objectTypeToStr(OBJ_BOOL), objectTypeToStr(obj.type));
+		return false;
+	}
+
+	if (obj.value.boolean != expected) {
+		printf("Object has wrong value, expected %hhd, got %hhd\n", expected, obj.value.boolean);
 		return false;
 	}
 
@@ -45,6 +60,24 @@ TEST(TestEval, TestEval_01_IntegerExpr) {
 	for(int i = 0; i < 2; i++) {
 		const struct Object evaluated = testEval(tests[i].input);
 		if(!testIntegerObject(evaluated, tests[i].expected)) {
+			FAIL();
+		}
+	}
+
+}
+
+TEST(TestEval, TestEval_02_BoolExpr) {
+	struct TestInteger {
+		char input[10];
+		int64_t expected;
+	} tests[2]{
+		{"true", true},
+		{"false", false},
+	};
+
+	for (int i = 0; i < 2; i++) {
+		const struct Object evaluated = testEval(tests[i].input);
+		if (!testBooleanObject(evaluated, tests[i].expected)) {
 			FAIL();
 		}
 	}
