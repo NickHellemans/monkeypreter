@@ -36,7 +36,7 @@ void freeExpression(Expression* expr) {
 			break;
 
 		case EXPR_PREFIX: 
-			freeExpression(expr->infix.right);
+			freeExpression(expr->prefix.right);
 			break;
 
 		case EXPR_IF: 

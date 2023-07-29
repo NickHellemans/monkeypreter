@@ -14,8 +14,8 @@ struct Object testEval(char* input) {
 	Parser parser = createParser(&lexer);
 	Program* program = parseProgram(&parser);
 	const struct Object obj = evalProgram(program);
-	//freeProgram(program);
-	//freeParser(&parser);
+	freeProgram(program);
+	freeParser(&parser);
 	return obj;
 }
 
@@ -33,15 +33,15 @@ bool testIntegerObject(struct Object obj, int64_t expected) {
 	return true;
 }
 
-bool testBooleanObject(struct Object obj, bool expected) {
+bool testBooleanObject(const struct Object* obj, const bool expected) {
 
-	if (obj.type != OBJ_BOOL) {
-		printf("Object is not a bool, expected %s, got %s\n", objectTypeToStr(OBJ_BOOL), objectTypeToStr(obj.type));
+	if (obj->type != OBJ_BOOL) {
+		printf("Object is not a bool, expected %s, got %s\n", objectTypeToStr(OBJ_BOOL), objectTypeToStr(obj->type));
 		return false;
 	}
 
-	if (obj.value.boolean != expected) {
-		printf("Object has wrong value, expected %hhd, got %hhd\n", expected, obj.value.boolean);
+	if (obj->value.boolean != expected) {
+		printf("Object has wrong value, expected %hhd, got %hhd\n", expected, obj->value.boolean);
 		return false;
 	}
 
@@ -77,7 +77,7 @@ TEST(TestEval, TestEval_02_BoolExpr) {
 
 	for (int i = 0; i < 2; i++) {
 		const struct Object evaluated = testEval(tests[i].input);
-		if (!testBooleanObject(evaluated, tests[i].expected)) {
+		if (!testBooleanObject(&evaluated, tests[i].expected)) {
 			FAIL();
 		}
 	}
@@ -99,9 +99,9 @@ TEST(TestEval, TestEval_03_BangOperator) {
 
 	for (int i = 0; i < 6; i++) {
 		printf("Starting test %d\n", i);
-		const struct Object evaluated = testEval(tests[i].input);
+		struct Object evaluated = testEval(tests[i].input);
 		printf("Evaluated: %s\n", inspectObject(&evaluated));
-		if (!testBooleanObject(evaluated, tests[i].expected)) {
+		if (!testBooleanObject(&evaluated, tests[i].expected)) {
 			FAIL();
 		}
 		printf("Ended test %d\n\n", i);

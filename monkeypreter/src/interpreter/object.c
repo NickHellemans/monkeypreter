@@ -57,7 +57,6 @@ struct Object evalProgram(Program* program) {
 }
 
 struct Object evalStatement(Statement* stmt) {
-	struct Object obj;
 	switch (stmt->type) {
 	case STMT_EXPR:
 		return evalExpression(stmt->expr);
