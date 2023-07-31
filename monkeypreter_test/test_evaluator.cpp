@@ -81,14 +81,31 @@ TEST(TestEval, TestEval_01_IntegerExpr) {
 
 TEST(TestEval, TestEval_02_BoolExpr) {
 	struct TestInteger {
-		char input[10];
+		char input[20];
 		int64_t expected;
-	} tests[2]{
+	} tests[]{
 		{"true", true},
 		{"false", false},
+		{"1 < 2", true},
+		{"1 > 2", false},
+		{"1 < 1", false},
+		{"1 > 1", false},
+		{"1 == 1", true},
+		{"1 != 1", false},
+		{"1 == 2", false},
+		{"1 != 2", true},
+		{"true == true", true},
+		{"false == false", true},
+		{"true == false", false},
+		{"true != false", true},
+		{"false != true", true},
+		{"(1 < 2) == true", true},
+		{"(1 < 2) == false", false},
+		{"(1 > 2) == true", false},
+		{"(1 > 2) == false", true},
 	};
 
-	for (int i = 0; i < 2; i++) {
+	for (int i = 0; i < 19; i++) {
 		const struct Object evaluated = testEval(tests[i].input);
 		if (!testBooleanObject(&evaluated, tests[i].expected)) {
 			FAIL();

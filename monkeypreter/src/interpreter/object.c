@@ -16,6 +16,13 @@ const struct Object FalseObj = {
 	.value =  {.boolean = false }
 };
 
+struct Object nativeBoolToBoolObj(bool input) {
+	if (input)
+		return TrueObj;
+	else 
+		return FalseObj;
+}
+
 char* inspectObject(const struct Object* obj) {
 	char* msg = (char*)malloc(128);
 	int success = 0;
@@ -128,6 +135,24 @@ struct Object evalMinusPrefixExpression(struct Object right) {
 }
 
 struct Object evalInfixExpression(enum OperatorType op, struct Object left, struct Object right) {
+
+	if (left.type == OBJ_INT && right.type == OBJ_INT) {
+		return evalIntegerInfixExpression(op, left, right);
+	}
+
+	if(op == OP_EQ && left.type == OBJ_BOOL && right.type == OBJ_BOOL) {
+		return nativeBoolToBoolObj(left.value.boolean == right.value.boolean);
+	}
+
+	if (op == OP_NOT_EQ && left.type == OBJ_BOOL && right.type == OBJ_BOOL) {
+		return nativeBoolToBoolObj(left.value.boolean != right.value.boolean);
+	}
+
+	return NullObj;
+	
+}
+
+struct Object evalIntegerInfixExpression(enum OperatorType op, struct Object left, struct Object right) {
 	struct Object obj = NullObj;
 	obj.type = OBJ_INT;
 
@@ -135,24 +160,36 @@ struct Object evalInfixExpression(enum OperatorType op, struct Object left, stru
 	const int64_t rightVal = right.value.integer;
 
 	switch (op) {
-		case OP_ADD:
-			obj.value.integer = leftVal + rightVal;
-			break;
+	case OP_ADD:
+		obj.value.integer = leftVal + rightVal;
+		break;
 
-		case OP_SUBTRACT:
-			obj.value.integer = leftVal - rightVal;
-			break;
+	case OP_SUBTRACT:
+		obj.value.integer = leftVal - rightVal;
+		break;
 
-		case OP_MULTIPLY:
-			obj.value.integer = leftVal * rightVal;
-			break;
+	case OP_MULTIPLY:
+		obj.value.integer = leftVal * rightVal;
+		break;
 
-		case OP_DIVIDE:
-			obj.value.integer = leftVal / rightVal;
-			break;
+	case OP_DIVIDE:
+		obj.value.integer = leftVal / rightVal;
+		break;
 
-		default:
-			return NullObj;
+	case OP_LT:
+		return nativeBoolToBoolObj(leftVal < rightVal);
+
+	case OP_GT:
+		return nativeBoolToBoolObj(leftVal > rightVal);
+
+	case OP_EQ:
+		return nativeBoolToBoolObj(leftVal == rightVal);
+
+	case OP_NOT_EQ:
+		return nativeBoolToBoolObj(leftVal != rightVal);
+
+	default:
+		return NullObj;
 	}
 
 	return obj;
