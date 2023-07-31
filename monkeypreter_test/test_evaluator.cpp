@@ -48,6 +48,16 @@ bool testBooleanObject(const struct Object* obj, const bool expected) {
 	return true;
 }
 
+bool testNullObject(const struct Object obj) {
+
+	if(obj.type != OBJ_NULL) {
+		printf("Object not NULL, got %s", objectTypeToStr(obj.type));
+		return false;
+	}
+
+	return true;
+}
+
 TEST(TestEval, TestEval_01_IntegerExpr) {
 	struct TestInteger {
 		char input[32];
@@ -135,6 +145,37 @@ TEST(TestEval, TestEval_03_BangOperator) {
 			FAIL();
 		}
 		printf("Ended test %d\n\n", i);
+	}
+
+}
+
+TEST(TestEval, TestEval_04_IfElseExpr) {
+	struct TestInteger {
+		char input[30];
+		int64_t expected;
+	} tests[]{
+		{"if (true) { 10 }", 10},
+		{"if (false) { 10 }", NULL},
+		{"if (1) { 10 }", 10},
+		{"if (1 < 2) { 10 }", 10},
+		{"if (1 > 2) { 10 }", NULL},
+		{"if (1 > 2) { 10 } else { 20 }", 20},
+		{"if (1 < 2) { 10 } else { 20 }", 10},
+	};
+
+	for (int i = 0; i < 7; i++) {
+		struct Object evaluated = testEval(tests[i].input);
+
+		if(tests[i].expected == NULL) {
+			if(!testNullObject(evaluated)) {
+				FAIL();
+			}
+		}
+		else {
+			if(!testIntegerObject(evaluated, tests[i].expected)) {
+				FAIL();
+			}
+		}
 	}
 
 }

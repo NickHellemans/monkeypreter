@@ -29,3 +29,5 @@ struct Object evalBangOperatorExpression(struct Object right);
 struct Object evalMinusPrefixExpression(struct Object right);
 struct Object evalInfixExpression(enum OperatorType op, struct Object left, struct Object right);
 struct Object evalIntegerInfixExpression(enum OperatorType op, struct Object left, struct Object right);
+struct Object evalIfExpression(struct IfExpression expr);
+struct Object evalBlockStatement(struct BlockStatement* bs);

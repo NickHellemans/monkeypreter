@@ -23,6 +23,12 @@ struct Object nativeBoolToBoolObj(bool input) {
 		return FalseObj;
 }
 
+bool isTruthy(struct Object obj) {
+	if (obj.type == OBJ_NULL ) return false;
+	if (obj.type == OBJ_BOOL) return obj.value.boolean;
+	if (obj.type == OBJ_INT) return obj.value.integer;
+}
+
 char* inspectObject(const struct Object* obj) {
 	char* msg = (char*)malloc(128);
 	int success = 0;
@@ -68,7 +74,7 @@ struct Object evalStatement(Statement* stmt) {
 	case STMT_EXPR:
 		return evalExpression(stmt->expr);
 	}
-
+	
 	return NullObj;
 }
 
@@ -92,6 +98,9 @@ struct Object evalExpression(Expression* expr) {
 			right = evalExpression(expr->infix.right);
 			struct Object left = evalExpression(expr->infix.left);
 			return evalInfixExpression(expr->infix.operatorType, left, right);
+
+		case EXPR_IF:
+			return evalIfExpression(expr->ifelse);
 	}
 
 	return obj;
@@ -190,6 +199,27 @@ struct Object evalIntegerInfixExpression(enum OperatorType op, struct Object lef
 
 	default:
 		return NullObj;
+	}
+
+	return obj;
+}
+
+struct Object evalIfExpression(struct IfExpression expr) {
+	struct Object condition = evalExpression(expr.condition);
+	if(isTruthy(condition)) {
+		return evalBlockStatement(expr.consequence);
+	} else if (expr.alternative) {
+		return evalBlockStatement(expr.alternative);
+	} 
+
+	return NullObj;
+}
+
+struct Object evalBlockStatement(struct BlockStatement* bs) {
+	struct Object obj;
+
+	for (size_t i = 0; i < bs->size; i++) {
+		obj = evalStatement(&bs->statements[i]);
 	}
 
 	return obj;
