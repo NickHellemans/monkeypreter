@@ -26,3 +26,4 @@ struct Object evalStatement(Statement* stmt);
 struct Object evalExpression(Expression* expr);
 struct Object evalPrefixExpression(enum OperatorType op, struct Object right);
 struct Object evalBangOperatorExpression(struct Object right);
+struct Object evalMinusPrefixExpression(struct Object right);

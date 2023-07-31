@@ -52,12 +52,14 @@ TEST(TestEval, TestEval_01_IntegerExpr) {
 	struct TestInteger {
 		char input[10];
 		int64_t expected;
-	} tests[2]{
+	} tests[]{
 		{"5", 5},
 		{"10", 10},
+		{"-5", -5},
+		{"-10", -10},
 	};
 
-	for(int i = 0; i < 2; i++) {
+	for(int i = 0; i < 4; i++) {
 		const struct Object evaluated = testEval(tests[i].input);
 		if(!testIntegerObject(evaluated, tests[i].expected)) {
 			FAIL();

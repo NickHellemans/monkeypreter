@@ -90,6 +90,8 @@ struct Object evalPrefixExpression(enum OperatorType op, struct Object right) {
 	switch (op) {
 		case OP_NEGATE:
 			return evalBangOperatorExpression(right);
+		case OP_SUBTRACT:
+			return evalMinusPrefixExpression(right);
 		default:
 			return NullObj;
 	}
@@ -107,4 +109,15 @@ struct Object evalBangOperatorExpression(struct Object right) {
 		default:
 			return FalseObj;
 	}
+}
+
+struct Object evalMinusPrefixExpression(struct Object right) {
+	struct Object obj = NullObj;
+	if(right.type != OBJ_INT) {
+		return obj;
+	}
+
+	obj.type = OBJ_INT;
+	obj.value.integer = -right.value.integer;
+	return obj;
 }
