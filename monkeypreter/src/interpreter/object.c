@@ -80,6 +80,11 @@ struct Object evalExpression(Expression* expr) {
 		case EXPR_PREFIX:
 			struct Object right = evalExpression(expr->prefix.right);
 			return evalPrefixExpression(expr->prefix.operatorType, right);
+			
+		case EXPR_INFIX:
+			right = evalExpression(expr->infix.right);
+			struct Object left = evalExpression(expr->infix.left);
+			return evalInfixExpression(expr->infix.operatorType, left, right);
 	}
 
 	return obj;
@@ -119,5 +124,36 @@ struct Object evalMinusPrefixExpression(struct Object right) {
 
 	obj.type = OBJ_INT;
 	obj.value.integer = -right.value.integer;
+	return obj;
+}
+
+struct Object evalInfixExpression(enum OperatorType op, struct Object left, struct Object right) {
+	struct Object obj = NullObj;
+	obj.type = OBJ_INT;
+
+	const int64_t leftVal = left.value.integer;
+	const int64_t rightVal = right.value.integer;
+
+	switch (op) {
+		case OP_ADD:
+			obj.value.integer = leftVal + rightVal;
+			break;
+
+		case OP_SUBTRACT:
+			obj.value.integer = leftVal - rightVal;
+			break;
+
+		case OP_MULTIPLY:
+			obj.value.integer = leftVal * rightVal;
+			break;
+
+		case OP_DIVIDE:
+			obj.value.integer = leftVal / rightVal;
+			break;
+
+		default:
+			return NullObj;
+	}
+
 	return obj;
 }
