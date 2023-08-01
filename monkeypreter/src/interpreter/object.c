@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include "object.h"
+#include <stdarg.h>
 #include <stdio.h>
 
 const struct Object NullObj = {
@@ -13,18 +14,18 @@ const struct Object TrueObj = {
 
 const struct Object FalseObj = {
 	.type = OBJ_BOOL,
-	.value =  {.boolean = false }
+	.value = {.boolean = false }
 };
 
 struct Object nativeBoolToBoolObj(bool input) {
 	if (input)
 		return TrueObj;
-	else 
+	else
 		return FalseObj;
 }
 
 bool isTruthy(struct Object obj) {
-	if (obj.type == OBJ_NULL ) return false;
+	if (obj.type == OBJ_NULL) return false;
 	if (obj.type == OBJ_BOOL) return obj.value.boolean;
 	if (obj.type == OBJ_INT) return obj.value.integer;
 	return false;
@@ -34,20 +35,24 @@ char* inspectObject(const struct Object* obj) {
 	char* msg = (char*)malloc(128);
 	int success = 0;
 	switch (obj->type) {
-		case OBJ_NULL:
-			success = sprintf_s(msg, 128, "NULL");
-			break;
+	case OBJ_NULL:
+		success = sprintf_s(msg, 128, "NULL\n");
+		break;
 
-		case OBJ_INT:
-			success = sprintf_s(msg, 128, "%lld", obj->value.integer);
-			break;
+	case OBJ_INT:
+		success = sprintf_s(msg, 128, "%lld\n", obj->value.integer);
+		break;
 
-		case OBJ_BOOL:
-			success = sprintf_s(msg, 128, "%s", obj->value.boolean ? "true" : "false");
-			break;
+	case OBJ_BOOL:
+		success = sprintf_s(msg, 128, "%s\n", obj->value.boolean ? "true" : "false");
+		break;
 
-		case OBJ_RETURN:
-			return inspectObject(obj->value.retObj);
+	case OBJ_RETURN:
+		return inspectObject(obj->value.retObj);
+
+	case OBJ_ERROR:
+		success = sprintf_s(msg, 128, "ERROR: %s\n", obj->value.error.msg);
+		break;
 	}
 	return msg;
 }
@@ -59,21 +64,49 @@ const char* objectTypeToStr(const enum ObjectType type)
 		"INTEGER",
 		"BOOLEAN",
 		"RETURN",
+		"ERROR",
 	};
 
 	return objectNames[type];
 }
 
+const char* operatorToStr(enum OperatorType op)
+{
+	const char* operatorNames[] = {
+	"UNKNOWN",
+	"+",
+	"-",
+	"*",
+	"/",
+	">",
+	">=",
+	"<",
+	"<=",
+	"==",
+	"!=",
+	"!",
+	"&&",
+	"||",
+	"%",
+	};
+
+	return operatorNames[op];
+}
+
 struct Object evalProgram(Program* program) {
 	struct Object obj;
-	
-	for(size_t i =0; i < program->size; i++) {
+
+	for (size_t i = 0; i < program->size; i++) {
 		obj = evalStatement(&program->statements[i]);
-		if(obj.type == OBJ_RETURN) {
+		if (obj.type == OBJ_RETURN) {
 			obj.type = obj.value.retObj->type;
 			struct Object* trash = obj.value.retObj;
 			obj.value = obj.value.retObj->value;
 			free(trash);
+			return obj;
+		}
+
+		if(obj.type == OBJ_ERROR) {
 			return obj;
 		}
 	}
@@ -100,62 +133,62 @@ struct Object evalStatement(Statement* stmt) {
 
 struct Object evalExpression(Expression* expr) {
 	struct Object obj = NullObj;
-	
+
 	switch (expr->type) {
-		case EXPR_INT:
-			obj.type = OBJ_INT;
-			obj.value.integer = expr->integer;
-			break;
+	case EXPR_INT:
+		obj.type = OBJ_INT;
+		obj.value.integer = expr->integer;
+		break;
 
-		case EXPR_BOOL:
-			return expr->boolean ? TrueObj : FalseObj;
+	case EXPR_BOOL:
+		return expr->boolean ? TrueObj : FalseObj;
 
-		case EXPR_PREFIX:
-			struct Object right = evalExpression(expr->prefix.right);
-			return evalPrefixExpression(expr->prefix.operatorType, right);
-			
-		case EXPR_INFIX:
-			right = evalExpression(expr->infix.right);
-			struct Object left = evalExpression(expr->infix.left);
-			return evalInfixExpression(expr->infix.operatorType, left, right);
+	case EXPR_PREFIX:
+		struct Object right = evalExpression(expr->prefix.right);
+		return evalPrefixExpression(expr->prefix.operatorType, right);
 
-		case EXPR_IF:
-			return evalIfExpression(expr->ifelse);
+	case EXPR_INFIX:
+		right = evalExpression(expr->infix.right);
+		struct Object left = evalExpression(expr->infix.left);
+		return evalInfixExpression(expr->infix.operatorType, left, right);
+
+	case EXPR_IF:
+		return evalIfExpression(expr->ifelse);
 	}
 
 	return obj;
 }
 
 struct Object evalPrefixExpression(enum OperatorType op, struct Object right) {
-	
+
 	switch (op) {
-		case OP_NEGATE:
-			return evalBangOperatorExpression(right);
-		case OP_SUBTRACT:
-			return evalMinusPrefixExpression(right);
-		default:
-			return NullObj;
+	case OP_NEGATE:
+		return evalBangOperatorExpression(right);
+	case OP_SUBTRACT:
+		return evalMinusPrefixExpression(right);
+	default:
+		return newEvalError("unknown operator: %s%s", operatorToStr(op), objectTypeToStr(right.type));
 	}
 }
 
 struct Object evalBangOperatorExpression(struct Object right) {
 
 	switch (right.type) {
-		case OBJ_BOOL:
-			return right.value.boolean ? FalseObj : TrueObj;
+	case OBJ_BOOL:
+		return right.value.boolean ? FalseObj : TrueObj;
 
-		case OBJ_NULL:
-			return TrueObj;
+	case OBJ_NULL:
+		return TrueObj;
 
-		default:
-			return FalseObj;
+	default:
+		return FalseObj;
 	}
 }
 
 struct Object evalMinusPrefixExpression(struct Object right) {
 	struct Object obj = NullObj;
-	if(right.type != OBJ_INT) {
-		return obj;
+	if (right.type != OBJ_INT) {
+		return newEvalError("unknown operator: -%s", objectTypeToStr(right.type));
 	}
 
 	obj.type = OBJ_INT;
@@ -165,11 +198,15 @@ struct Object evalMinusPrefixExpression(struct Object right) {
 
 struct Object evalInfixExpression(enum OperatorType op, struct Object left, struct Object right) {
 
+	if (left.type != right.type) {
+		return newEvalError("type mismatch: %s %s %s", objectTypeToStr(left.type), operatorToStr(op), objectTypeToStr(right.type));
+	}
+
 	if (left.type == OBJ_INT && right.type == OBJ_INT) {
 		return evalIntegerInfixExpression(op, left, right);
 	}
 
-	if(op == OP_EQ && left.type == OBJ_BOOL && right.type == OBJ_BOOL) {
+	if (op == OP_EQ && left.type == OBJ_BOOL && right.type == OBJ_BOOL) {
 		return nativeBoolToBoolObj(left.value.boolean == right.value.boolean);
 	}
 
@@ -177,8 +214,8 @@ struct Object evalInfixExpression(enum OperatorType op, struct Object left, stru
 		return nativeBoolToBoolObj(left.value.boolean != right.value.boolean);
 	}
 
-	return NullObj;
-	
+	return newEvalError("unknown operator: %s %s %s", objectTypeToStr(left.type), operatorToStr(op), objectTypeToStr(right.type));
+
 }
 
 struct Object evalIntegerInfixExpression(enum OperatorType op, struct Object left, struct Object right) {
@@ -218,7 +255,7 @@ struct Object evalIntegerInfixExpression(enum OperatorType op, struct Object lef
 		return nativeBoolToBoolObj(leftVal != rightVal);
 
 	default:
-		return NullObj;
+		return newEvalError("unknown operator: %s %s %s", objectTypeToStr(left.type), operatorToStr(op), objectTypeToStr(right.type));
 	}
 
 	return obj;
@@ -226,11 +263,12 @@ struct Object evalIntegerInfixExpression(enum OperatorType op, struct Object lef
 
 struct Object evalIfExpression(struct IfExpression expr) {
 	struct Object condition = evalExpression(expr.condition);
-	if(isTruthy(condition)) {
+	if (isTruthy(condition)) {
 		return evalBlockStatement(expr.consequence);
-	} else if (expr.alternative) {
+	}
+	else if (expr.alternative) {
 		return evalBlockStatement(expr.alternative);
-	} 
+	}
 
 	return NullObj;
 }
@@ -240,10 +278,21 @@ struct Object evalBlockStatement(struct BlockStatement* bs) {
 
 	for (size_t i = 0; i < bs->size; i++) {
 		obj = evalStatement(&bs->statements[i]);
-		if(obj.type == OBJ_RETURN) {
+		if (obj.type == OBJ_RETURN || obj.type == OBJ_ERROR) {
 			return obj;
 		}
 	}
 
 	return obj;
 }
+
+struct Object newEvalError(const char* format, ...) {
+	struct Object errorObj;
+	errorObj.type = OBJ_ERROR;
+	va_list argptr;
+	va_start(argptr, format);
+	int success = vsnprintf(errorObj.value.error.msg, 128, format, argptr);
+	va_end(argptr);
+	return errorObj;
+}
+

@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 
+
 extern "C" {
 	#include "parser/parser.h"
 	#include "parser/parser.c"
@@ -198,6 +199,55 @@ TEST(TestEval, TestEval_05_ReturnStatements) {
 	for (int i = 0; i < 5; i++) {
 		struct Object evaluated = testEval(tests[i].input);
 		if (!testIntegerObject(evaluated, tests[i].expected)) {
+			FAIL();
+		}
+	}
+}
+
+TEST(TestEval, TestEval_06_ErrorHandling) {
+	struct TestInteger {
+		char input[60];
+		char expected[128];
+	} tests[]{
+		{
+		"5 + true;",
+		"type mismatch: INTEGER + BOOLEAN",
+		},
+		{
+		"5 + true; 5;",
+		"type mismatch: INTEGER + BOOLEAN",
+		},
+		{
+		"-true",
+		"unknown operator: -BOOLEAN",
+		},
+		{
+		"true + false;",
+		"unknown operator: BOOLEAN + BOOLEAN",
+		},
+		{
+		"5; true + false; 5",
+		"unknown operator: BOOLEAN + BOOLEAN",
+		},
+		{
+		"if (10 > 1) { true + false; }",
+		"unknown operator: BOOLEAN + BOOLEAN",
+		},
+		{
+		"if (10 > 1) {if (10 > 1) {return true + false;}return 1;}",
+		"unknown operator: BOOLEAN + BOOLEAN",
+		},
+	};
+
+	for (int i = 0; i < 5; i++) {
+		struct Object evaluated = testEval(tests[i].input);
+		if(evaluated.type != OBJ_ERROR) {
+			printf("No error object returned, got %s\n", objectTypeToStr(evaluated.type));
+			FAIL();
+		}
+
+		if(strcmp(evaluated.value.error.msg, tests[i].expected) != 0) {
+			printf("Wrong error message. Expected: %s, got %s\n", tests[i].expected, evaluated.value.error.msg);
 			FAIL();
 		}
 	}

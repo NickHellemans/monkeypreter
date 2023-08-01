@@ -8,12 +8,18 @@ typedef enum ObjectType {
 	OBJ_INT,
 	OBJ_BOOL,
 	OBJ_RETURN,
+	OBJ_ERROR,
 } ObjectType;
+
+struct ErrorObject {
+	char msg[128];
+};
 
 union ObjectVal {
 	bool boolean;
 	int64_t integer;
 	struct Object* retObj;
+	struct ErrorObject error;
 };
 
 struct Object {
@@ -33,3 +39,4 @@ struct Object evalInfixExpression(enum OperatorType op, struct Object left, stru
 struct Object evalIntegerInfixExpression(enum OperatorType op, struct Object left, struct Object right);
 struct Object evalIfExpression(struct IfExpression expr);
 struct Object evalBlockStatement(struct BlockStatement* bs);
+struct Object newEvalError(const char* format, ...);
