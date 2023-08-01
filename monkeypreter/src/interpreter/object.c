@@ -93,6 +93,10 @@ const char* operatorToStr(enum OperatorType op)
 	return operatorNames[op];
 }
 
+bool isError(struct Object obj) {
+	return obj.type == OBJ_ERROR;
+}
+
 struct Object evalProgram(Program* program) {
 	struct Object obj;
 
@@ -106,7 +110,7 @@ struct Object evalProgram(Program* program) {
 			return obj;
 		}
 
-		if(obj.type == OBJ_ERROR) {
+		if(isError(obj)) {
 			return obj;
 		}
 	}
@@ -120,6 +124,9 @@ struct Object evalStatement(Statement* stmt) {
 
 	case STMT_RETURN:
 		struct Object obj = evalExpression(stmt->expr);
+		if(isError(obj)) {
+			return obj;
+		}
 		struct Object* retObj = (struct Object*)malloc(sizeof * retObj);
 		retObj->type = obj.type;
 		retObj->value = obj.value;
@@ -145,11 +152,21 @@ struct Object evalExpression(Expression* expr) {
 
 	case EXPR_PREFIX:
 		struct Object right = evalExpression(expr->prefix.right);
+		if (isError(right)) {
+			return right;
+		}
 		return evalPrefixExpression(expr->prefix.operatorType, right);
 
 	case EXPR_INFIX:
 		right = evalExpression(expr->infix.right);
+		if (isError(right)) {
+			return right;
+		}
+
 		struct Object left = evalExpression(expr->infix.left);
+		if (isError(left)) {
+			return left;
+		}
 		return evalInfixExpression(expr->infix.operatorType, left, right);
 
 	case EXPR_IF:
@@ -263,6 +280,10 @@ struct Object evalIntegerInfixExpression(enum OperatorType op, struct Object lef
 
 struct Object evalIfExpression(struct IfExpression expr) {
 	struct Object condition = evalExpression(expr.condition);
+	if (isError(condition)) {
+		return condition;
+	}
+
 	if (isTruthy(condition)) {
 		return evalBlockStatement(expr.consequence);
 	}
@@ -278,7 +299,7 @@ struct Object evalBlockStatement(struct BlockStatement* bs) {
 
 	for (size_t i = 0; i < bs->size; i++) {
 		obj = evalStatement(&bs->statements[i]);
-		if (obj.type == OBJ_RETURN || obj.type == OBJ_ERROR) {
+		if (obj.type == OBJ_RETURN || isError(obj)) {
 			return obj;
 		}
 	}
