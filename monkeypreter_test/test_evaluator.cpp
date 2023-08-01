@@ -179,3 +179,26 @@ TEST(TestEval, TestEval_04_IfElseExpr) {
 	}
 
 }
+
+TEST(TestEval, TestEval_05_ReturnStatements) {
+	struct TestInteger {
+		char input[50];
+		int64_t expected;
+	} tests[]{
+	{"return 10;", 10},
+	{"return 10; 9;", 10},
+	{"return 2 * 5; 9;", 10},
+	{"9; return 2 * 5; 9;", 10},
+	{
+		"if (10 > 1) {if (10 > 1) {return 10;} return 1;}",
+		10,
+	   },
+	};
+
+	for (int i = 0; i < 5; i++) {
+		struct Object evaluated = testEval(tests[i].input);
+		if (!testIntegerObject(evaluated, tests[i].expected)) {
+			FAIL();
+		}
+	}
+}

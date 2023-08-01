@@ -7,11 +7,13 @@ typedef enum ObjectType {
 	OBJ_NULL,
 	OBJ_INT,
 	OBJ_BOOL,
+	OBJ_RETURN,
 } ObjectType;
 
 union ObjectVal {
 	bool boolean;
 	int64_t integer;
+	struct Object* retObj;
 };
 
 struct Object {

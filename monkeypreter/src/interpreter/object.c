@@ -27,6 +27,7 @@ bool isTruthy(struct Object obj) {
 	if (obj.type == OBJ_NULL ) return false;
 	if (obj.type == OBJ_BOOL) return obj.value.boolean;
 	if (obj.type == OBJ_INT) return obj.value.integer;
+	return false;
 }
 
 char* inspectObject(const struct Object* obj) {
@@ -44,6 +45,9 @@ char* inspectObject(const struct Object* obj) {
 		case OBJ_BOOL:
 			success = sprintf_s(msg, 128, "%s", obj->value.boolean ? "true" : "false");
 			break;
+
+		case OBJ_RETURN:
+			return inspectObject(obj->value.retObj);
 	}
 	return msg;
 }
@@ -54,6 +58,7 @@ const char* objectTypeToStr(const enum ObjectType type)
 		"NULL",
 		"INTEGER",
 		"BOOLEAN",
+		"RETURN",
 	};
 
 	return objectNames[type];
@@ -64,8 +69,14 @@ struct Object evalProgram(Program* program) {
 	
 	for(size_t i =0; i < program->size; i++) {
 		obj = evalStatement(&program->statements[i]);
+		if(obj.type == OBJ_RETURN) {
+			obj.type = obj.value.retObj->type;
+			struct Object* trash = obj.value.retObj;
+			obj.value = obj.value.retObj->value;
+			free(trash);
+			return obj;
+		}
 	}
-
 	return obj;
 }
 
@@ -73,8 +84,17 @@ struct Object evalStatement(Statement* stmt) {
 	switch (stmt->type) {
 	case STMT_EXPR:
 		return evalExpression(stmt->expr);
+
+	case STMT_RETURN:
+		struct Object obj = evalExpression(stmt->expr);
+		struct Object* retObj = (struct Object*)malloc(sizeof * retObj);
+		retObj->type = obj.type;
+		retObj->value = obj.value;
+		obj.type = OBJ_RETURN;
+		obj.value.retObj = retObj;
+		return obj;
 	}
-	
+
 	return NullObj;
 }
 
@@ -220,6 +240,9 @@ struct Object evalBlockStatement(struct BlockStatement* bs) {
 
 	for (size_t i = 0; i < bs->size; i++) {
 		obj = evalStatement(&bs->statements[i]);
+		if(obj.type == OBJ_RETURN) {
+			return obj;
+		}
 	}
 
 	return obj;
