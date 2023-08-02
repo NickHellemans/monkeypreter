@@ -97,11 +97,11 @@ bool isError(struct Object obj) {
 	return obj.type == OBJ_ERROR;
 }
 
-struct Object evalProgram(Program* program) {
+struct Object evalProgram(Program* program, struct ObjectEnvironment* env) {
 	struct Object obj;
 
 	for (size_t i = 0; i < program->size; i++) {
-		obj = evalStatement(&program->statements[i]);
+		obj = evalStatement(&program->statements[i], env);
 		if (obj.type == OBJ_RETURN) {
 			obj.type = obj.value.retObj->type;
 			struct Object* trash = obj.value.retObj;
@@ -117,28 +117,42 @@ struct Object evalProgram(Program* program) {
 	return obj;
 }
 
-struct Object evalStatement(Statement* stmt) {
-	switch (stmt->type) {
-	case STMT_EXPR:
-		return evalExpression(stmt->expr);
+struct Object evalStatement(Statement* stmt, struct ObjectEnvironment* env) {
+	struct Object obj = NullObj;
 
-	case STMT_RETURN:
-		struct Object obj = evalExpression(stmt->expr);
-		if(isError(obj)) {
+	switch (stmt->type) {
+		case STMT_EXPR: {
+			return evalExpression(stmt->expr, env);
+		}
+
+		case STMT_RETURN: {
+			obj = evalExpression(stmt->expr, env);
+			if(isError(obj)) {
+				return obj;
+			}
+			struct Object* retObj = (struct Object*)malloc(sizeof * retObj);
+			retObj->type = obj.type;
+			retObj->value = obj.value;
+			obj.type = OBJ_RETURN;
+			obj.value.retObj = retObj;
 			return obj;
 		}
-		struct Object* retObj = (struct Object*)malloc(sizeof * retObj);
-		retObj->type = obj.type;
-		retObj->value = obj.value;
-		obj.type = OBJ_RETURN;
-		obj.value.retObj = retObj;
-		return obj;
+
+		case STMT_LET: {
+			obj = evalExpression(stmt->expr, env);
+			if (isError(obj)) {
+				return obj;
+			}
+			//Now what? --> Add identifier to env
+			environmentSet(env, stmt->identifier.value, obj);
+			break;
+		}
 	}
 
 	return NullObj;
 }
 
-struct Object evalExpression(Expression* expr) {
+struct Object evalExpression(Expression* expr, struct ObjectEnvironment* env) {
 	struct Object obj = NullObj;
 
 	switch (expr->type) {
@@ -151,27 +165,31 @@ struct Object evalExpression(Expression* expr) {
 		return expr->boolean ? TrueObj : FalseObj;
 
 	case EXPR_PREFIX:
-		struct Object right = evalExpression(expr->prefix.right);
+		struct Object right = evalExpression(expr->prefix.right, env);
 		if (isError(right)) {
 			return right;
 		}
 		return evalPrefixExpression(expr->prefix.operatorType, right);
 
 	case EXPR_INFIX:
-		right = evalExpression(expr->infix.right);
+		right = evalExpression(expr->infix.right, env);
 		if (isError(right)) {
 			return right;
 		}
 
-		struct Object left = evalExpression(expr->infix.left);
+		struct Object left = evalExpression(expr->infix.left, env);
 		if (isError(left)) {
 			return left;
 		}
 		return evalInfixExpression(expr->infix.operatorType, left, right);
 
-	case EXPR_IF:
-		return evalIfExpression(expr->ifelse);
+		case EXPR_IF:
+			return evalIfExpression(expr->ifelse, env);
+
+		case EXPR_IDENT:
+		return evalIdentifier(expr, env);
 	}
+
 
 	return obj;
 }
@@ -278,27 +296,27 @@ struct Object evalIntegerInfixExpression(enum OperatorType op, struct Object lef
 	return obj;
 }
 
-struct Object evalIfExpression(struct IfExpression expr) {
-	struct Object condition = evalExpression(expr.condition);
+struct Object evalIfExpression(struct IfExpression expr, struct ObjectEnvironment* env) {
+	struct Object condition = evalExpression(expr.condition, env);
 	if (isError(condition)) {
 		return condition;
 	}
 
 	if (isTruthy(condition)) {
-		return evalBlockStatement(expr.consequence);
+		return evalBlockStatement(expr.consequence, env);
 	}
 	else if (expr.alternative) {
-		return evalBlockStatement(expr.alternative);
+		return evalBlockStatement(expr.alternative, env);
 	}
 
 	return NullObj;
 }
 
-struct Object evalBlockStatement(struct BlockStatement* bs) {
+struct Object evalBlockStatement(struct BlockStatement* bs, struct ObjectEnvironment* env) {
 	struct Object obj;
 
 	for (size_t i = 0; i < bs->size; i++) {
-		obj = evalStatement(&bs->statements[i]);
+		obj = evalStatement(&bs->statements[i], env);
 		if (obj.type == OBJ_RETURN || isError(obj)) {
 			return obj;
 		}
@@ -317,3 +335,10 @@ struct Object newEvalError(const char* format, ...) {
 	return errorObj;
 }
 
+struct Object evalIdentifier(Expression* expr, struct ObjectEnvironment* env) {
+	struct Object obj = environmentGet(env, expr->ident.value);
+	if(obj.type == OBJ_NULL) {
+		return newEvalError("identifier not found: %s", expr->ident.value);
+	}
+	return obj;
+}

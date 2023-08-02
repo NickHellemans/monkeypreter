@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 
+
 extern "C" {
 	#include "parser/parser.h"
 	#include "parser/parser.c"
@@ -8,15 +9,21 @@ extern "C" {
 	#include "parser/ast.c"
 	#include "interpreter/object.h"
 	#include "interpreter/object.c"
+	#include "interpreter/environment.h",
+	#include "interpreter/environment.c",
+	#include "interpreter/hash_map.h",
+	#include "interpreter/hash_map.c"
 }
 
 struct Object testEval(char* input) {
 	Lexer lexer = createLexer(input);
 	Parser parser = createParser(&lexer);
 	Program* program = parseProgram(&parser);
-	const struct Object obj = evalProgram(program);
+	struct ObjectEnvironment env = newEnvironment();
+	const struct Object obj = evalProgram(program, &env);
 	freeProgram(program);
 	freeParser(&parser);
+	deleteEnvironment(&env);
 	return obj;
 }
 
@@ -237,9 +244,13 @@ TEST(TestEval, TestEval_06_ErrorHandling) {
 		"if (10 > 1) {if (10 > 1) {return true + false;}return 1;}",
 		"unknown operator: BOOLEAN + BOOLEAN",
 		},
+		{
+		"foobar",
+		"identifier not found: foobar",
+		},
 	};
 
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < 8; i++) {
 		struct Object evaluated = testEval(tests[i].input);
 		if(evaluated.type != OBJ_ERROR) {
 			printf("No error object returned, got %s\n", objectTypeToStr(evaluated.type));
@@ -250,5 +261,27 @@ TEST(TestEval, TestEval_06_ErrorHandling) {
 			printf("Wrong error message. Expected: %s, got %s\n", tests[i].expected, evaluated.value.error.msg);
 			FAIL();
 		}
+	}
+}
+
+TEST(TestEval, TestEval_07_LetStatements) {
+	struct TestInteger {
+		char input[60];
+		int64_t expected;
+	} tests[]{
+{"let a = 5; a;", 5},
+{"let a = 5 * 5; a;", 25},
+{"let a = 5; let b = a; b;", 5},
+{"let a = 5; let b = a; let c = a + b + 5; c;", 15},
+	};
+
+	for (int i = 0; i < 4; i++) {
+		printf("Start test %d\n",i);
+		struct Object evaluated = testEval(tests[i].input);
+		printf("Here after eval: type = %d, value = %llu\n", evaluated.type, evaluated.value.integer);
+		if (!testIntegerObject(evaluated, tests[i].expected)) {
+			FAIL();
+		}
+		printf("End test %d\n", i);
 	}
 }

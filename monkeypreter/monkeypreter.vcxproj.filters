@@ -33,6 +33,12 @@
     <ClCompile Include="src\interpreter\object.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\interpreter\hash_map.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\interpreter\environment.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lexer\lexer.h">
@@ -45,6 +51,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\interpreter\object.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\interpreter\hash_map.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\interpreter\environment.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

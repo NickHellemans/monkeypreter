@@ -130,6 +130,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="monkeypreter.c" />
+    <ClCompile Include="src\interpreter\environment.c" />
+    <ClCompile Include="src\interpreter\hash_map.c" />
     <ClCompile Include="src\interpreter\object.c" />
     <ClCompile Include="src\lexer\lexer.c" />
     <ClCompile Include="src\parser\ast.c" />
@@ -137,6 +139,8 @@
     <ClCompile Include="src\parser\parser.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\interpreter\environment.h" />
+    <ClInclude Include="src\interpreter\hash_map.h" />
     <ClInclude Include="src\interpreter\object.h" />
     <ClInclude Include="src\lexer\lexer.h" />
     <ClInclude Include="src\parser\ast.h" />
