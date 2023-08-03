@@ -1,14 +1,25 @@
 #include "environment.h"
 #include "hash_map.h"
 
-struct ObjectEnvironment newEnvironment(void) {
-	struct ObjectEnvironment env;
-	env.store = createHashMap(17);
+struct ObjectEnvironment* newEnvironment(void) {
+	struct ObjectEnvironment* env = (struct ObjectEnvironment*)malloc(sizeof * env);
+	env->store = createHashMap(17);
+	env->outer = NULL;
+	return env;
+}
+
+struct ObjectEnvironment* newEnclosedEnvironment(struct ObjectEnvironment* outer) {
+	struct ObjectEnvironment* env = newEnvironment();
+	env->outer = outer;
 	return env;
 }
 
 struct Object environmentGet(struct ObjectEnvironment* env, char* key) {
-	return lookupKeyInHashMap(env->store, key);
+	struct Object obj = lookupKeyInHashMap(env->store, key);
+	if(obj.type == OBJ_NULL && env->outer != NULL) {
+		obj = environmentGet(env->outer, key);
+	}
+	return obj;
 }
 
 struct Object environmentSet(struct ObjectEnvironment* env, char* key, struct Object data) {
@@ -18,4 +29,17 @@ struct Object environmentSet(struct ObjectEnvironment* env, char* key, struct Ob
 
 void deleteEnvironment(struct ObjectEnvironment* env) {
 	destroyHashMap(env->store);
+	free(env);
+}
+
+void deleteAllEnvironment(struct ObjectEnvironment* env) {
+	destroyHashMap(env->store);
+	struct ObjectEnvironment* currEnv = env->outer;
+	while (currEnv != NULL) {
+		struct ObjectEnvironment* trash = currEnv;
+		currEnv = currEnv->outer;
+		destroyHashMap(trash->store);
+		free(trash);
+	}
+	free(env);
 }

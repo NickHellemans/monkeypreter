@@ -11,10 +11,17 @@ typedef enum ObjectType {
 	OBJ_BOOL,
 	OBJ_RETURN,
 	OBJ_ERROR,
+	OBJ_FUNCTION,
 } ObjectType;
 
 struct ErrorObject {
 	char msg[128];
+};
+
+struct FunctionObject {
+	struct IdentifierList parameters;
+	struct BlockStatement* body;
+	struct ObjectEnvironment* env;
 };
 
 union ObjectVal {
@@ -22,11 +29,18 @@ union ObjectVal {
 	int64_t integer;
 	struct Object* retObj;
 	struct ErrorObject error;
+	struct FunctionObject function;
 };
 
 struct Object {
 	ObjectType type;
 	union ObjectVal value;
+};
+
+struct ObjectList {
+	size_t size;
+	size_t cap;
+	struct Object* objects;
 };
 
 char* inspectObject(const struct Object* obj);
@@ -43,3 +57,7 @@ struct Object evalIfExpression(struct IfExpression expr, struct ObjectEnvironmen
 struct Object evalBlockStatement(struct BlockStatement* bs, struct ObjectEnvironment* env);
 struct Object newEvalError(const char* format, ...);
 struct Object evalIdentifier(Expression* expr, struct ObjectEnvironment* env);
+struct ObjectList evalExpressions(struct ExpressionList expressions, struct ObjectEnvironment* env);
+struct Object applyFunction(struct Object fn, struct ObjectList args);
+struct ObjectEnvironment* extendFunctionEnv(struct Object fn, struct ObjectList args);
+struct Object unwrapReturnValue(struct Object obj);

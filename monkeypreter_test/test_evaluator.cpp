@@ -1,7 +1,5 @@
 #include "gtest/gtest.h"
 
-
-
 extern "C" {
 	#include "parser/parser.h"
 	#include "parser/parser.c"
@@ -9,21 +7,21 @@ extern "C" {
 	#include "parser/ast.c"
 	#include "interpreter/object.h"
 	#include "interpreter/object.c"
-	#include "interpreter/environment.h",
-	#include "interpreter/environment.c",
-	#include "interpreter/hash_map.h",
+	#include "interpreter/environment.h"
+	#include "interpreter/environment.c"
+	#include "interpreter/hash_map.h"
 	#include "interpreter/hash_map.c"
 }
 
-struct Object testEval(char* input) {
+struct Object testEval(const char* input) {
 	Lexer lexer = createLexer(input);
 	Parser parser = createParser(&lexer);
 	Program* program = parseProgram(&parser);
-	struct ObjectEnvironment env = newEnvironment();
-	const struct Object obj = evalProgram(program, &env);
-	freeProgram(program);
+	struct ObjectEnvironment* env = newEnvironment();
+	const struct Object obj = evalProgram(program, env);
+	//freeProgram(program);
 	freeParser(&parser);
-	deleteEnvironment(&env);
+	deleteEnvironment(env);
 	return obj;
 }
 
@@ -146,13 +144,10 @@ TEST(TestEval, TestEval_03_BangOperator) {
 	};
 
 	for (int i = 0; i < 6; i++) {
-		printf("Starting test %d\n", i);
 		struct Object evaluated = testEval(tests[i].input);
-		printf("Evaluated: %s\n", inspectObject(&evaluated));
 		if (!testBooleanObject(&evaluated, tests[i].expected)) {
 			FAIL();
 		}
-		printf("Ended test %d\n\n", i);
 	}
 
 }
@@ -284,4 +279,75 @@ TEST(TestEval, TestEval_07_LetStatements) {
 		}
 		printf("End test %d\n", i);
 	}
+}
+
+TEST(TestEval, TestEval_08_FunctionObject) {
+
+	char input[] = "fn(x) { x + 2; };";
+	struct Object evaluated = testEval(input);
+	if(evaluated.type != OBJ_FUNCTION) {
+		printf("object is not a function, got %d\n", evaluated.type);
+		FAIL();
+	}
+
+	FunctionObject func = evaluated.value.function;
+	if(func.parameters.size != 1) {
+		printf("function has wrong parameters length, expected 1, got %llu\n", func.parameters.size);
+		FAIL();
+	}
+
+	if(strcmp(func.parameters.values[0].value, "x") != 0) {
+		printf("Parameter is not 'x', got %s\n", func.parameters.values[0].value);
+		FAIL();
+	}
+
+	char expectedBody[] = "{(x + 2)}";
+
+	char* body = (char*)malloc(MAX_PROGRAM_LEN);
+	body[0] = '\0';
+	blockStatementToStr(body, func.body);
+
+	if(strcmp(body, expectedBody) != 0) {
+		printf("Body is not: '%s', got '%s'\n", expectedBody, body);
+		FAIL();
+	}
+
+	free(body);
+}
+
+TEST(TestEval, TestEval_09_FunctionApplication) {
+	struct TestInteger {
+		char input[55];
+		int64_t expected;
+	} tests[]{
+		{"let identity = fn(x) { x; }; identity(5);", 5},
+		{ "let identity = fn(x) { return x; }; identity(5);", 5 },
+		{ "let double = fn(x) { x * 2; }; double(5);", 10 },
+		{ "let add = fn(x, y) { x + y; }; add(5, 5);", 10 },
+		{ "let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20 },
+		{ "fn(x) { x; }(5)", 5 },
+	};
+
+	for (int i = 0; i < 6; i++) {
+		struct Object evaluated = testEval(tests[i].input);
+		if (!testIntegerObject(evaluated, tests[i].expected)) {
+			FAIL();
+		}
+	}
+}
+
+TEST(TestEval, TestEval_10_Closures) {
+	
+	const char* input = "let newAdder = fn(x) {"
+						"fn(y) { x + y };"
+					 "};"
+
+				     "let addTwo = newAdder(2);"
+				     "addTwo(2);";
+
+	struct Object evaluated = testEval(input);
+	if (!testIntegerObject(evaluated, 4)) {
+		FAIL();
+	}
+	
 }

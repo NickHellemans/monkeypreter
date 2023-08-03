@@ -2,6 +2,9 @@
 #include "object.h"
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
+
+#include "hash_map.h"
 
 const struct Object NullObj = {
 	.type = OBJ_NULL
@@ -31,28 +34,52 @@ bool isTruthy(struct Object obj) {
 	return false;
 }
 
+#define MAX_OBJECT_SIZE 1000000
 char* inspectObject(const struct Object* obj) {
-	char* msg = (char*)malloc(128);
+	char* msg = (char*) malloc(MAX_OBJECT_SIZE);
+	msg[0] = '\0';
 	int success = 0;
+
+	if (!msg) {
+		int success = fprintf(stderr, "Value of errno: %d\n", errno);
+		perror("OUT OF MEMORY");
+		return NULL;
+	}
+
 	switch (obj->type) {
-	case OBJ_NULL:
-		success = sprintf_s(msg, 128, "NULL\n");
-		break;
+		case OBJ_NULL:
+			success = sprintf_s(msg, MAX_OBJECT_SIZE, "NULL\n");
+			break;
 
-	case OBJ_INT:
-		success = sprintf_s(msg, 128, "%lld\n", obj->value.integer);
-		break;
+		case OBJ_INT:
+			success = sprintf_s(msg, MAX_OBJECT_SIZE, "%lld\n", obj->value.integer);
+			break;
 
-	case OBJ_BOOL:
-		success = sprintf_s(msg, 128, "%s\n", obj->value.boolean ? "true" : "false");
-		break;
+		case OBJ_BOOL:
+			success = sprintf_s(msg, MAX_OBJECT_SIZE, "%s\n", obj->value.boolean ? "true" : "false");
+			break;
 
-	case OBJ_RETURN:
-		return inspectObject(obj->value.retObj);
+		case OBJ_RETURN:
+			return inspectObject(obj->value.retObj);
 
-	case OBJ_ERROR:
-		success = sprintf_s(msg, 128, "ERROR: %s\n", obj->value.error.msg);
-		break;
+		case OBJ_ERROR:
+			success = sprintf_s(msg, MAX_OBJECT_SIZE, "ERROR: %s\n", obj->value.error.msg);
+			break;
+
+		case OBJ_FUNCTION:
+			strcat_s(msg, MAX_OBJECT_SIZE, "fn");
+			strcat_s(msg, MAX_OBJECT_SIZE, "(");
+			for (size_t i = 0; i < obj->value.function.parameters.size; i++) {
+				if (i > 0) {
+					strcat_s(msg, MAX_OBJECT_SIZE, ", ");
+				}
+
+				strcat_s(msg, MAX_OBJECT_SIZE, obj->value.function.parameters.values[i].value);
+			}
+			strcat_s(msg, MAX_OBJECT_SIZE, ") {\n");
+			blockStatementToStr(msg, obj->value.function.body);
+			strcat_s(msg, MAX_OBJECT_SIZE, "\n}");
+			break;
 	}
 	return msg;
 }
@@ -65,6 +92,7 @@ const char* objectTypeToStr(const enum ObjectType type)
 		"BOOLEAN",
 		"RETURN",
 		"ERROR",
+		"FUNCTION",
 	};
 
 	return objectNames[type];
@@ -103,11 +131,11 @@ struct Object evalProgram(Program* program, struct ObjectEnvironment* env) {
 	for (size_t i = 0; i < program->size; i++) {
 		obj = evalStatement(&program->statements[i], env);
 		if (obj.type == OBJ_RETURN) {
-			obj.type = obj.value.retObj->type;
-			struct Object* trash = obj.value.retObj;
-			obj.value = obj.value.retObj->value;
-			free(trash);
-			return obj;
+			//obj.type = obj.value.retObj->type;
+			//struct Object* trash = obj.value.retObj;
+			//obj.value = obj.value.retObj->value;
+			//free(trash);
+			return unwrapReturnValue(obj);
 		}
 
 		if(isError(obj)) {
@@ -145,7 +173,7 @@ struct Object evalStatement(Statement* stmt, struct ObjectEnvironment* env) {
 			}
 			//Now what? --> Add identifier to env
 			environmentSet(env, stmt->identifier.value, obj);
-			break;
+			return obj;
 		}
 	}
 
@@ -187,7 +215,31 @@ struct Object evalExpression(Expression* expr, struct ObjectEnvironment* env) {
 			return evalIfExpression(expr->ifelse, env);
 
 		case EXPR_IDENT:
-		return evalIdentifier(expr, env);
+			return evalIdentifier(expr, env);
+
+		case EXPR_FUNCTION:
+			struct Object func;
+			func.type = OBJ_FUNCTION;
+			func.value.function.parameters = expr->function.parameters;
+			func.value.function.body = expr->function.body;
+			func.value.function.env = env;
+			return func;
+
+		case EXPR_CALL:
+			struct Object calledFunc = evalExpression(expr->call.function, env);
+			if(isError(calledFunc)) {
+				return calledFunc;
+			}
+			
+			//Evaluate parameter expr
+			struct ObjectList args = evalExpressions(expr->call.arguments, env);
+			if(args.size == 1 && isError(args.objects[0])) {
+				return args.objects[0];
+			}
+
+			//Apply function with evaluated args
+			return applyFunction(calledFunc, args);
+
 	}
 
 
@@ -339,6 +391,69 @@ struct Object evalIdentifier(Expression* expr, struct ObjectEnvironment* env) {
 	struct Object obj = environmentGet(env, expr->ident.value);
 	if(obj.type == OBJ_NULL) {
 		return newEvalError("identifier not found: %s", expr->ident.value);
+	}
+	return obj;
+}
+
+struct ObjectList evalExpressions(struct ExpressionList expressions, struct ObjectEnvironment* env) {
+	struct ObjectList args;
+	args.size = 0;
+	args.cap = expressions.size;
+	args.objects = (struct Object*)malloc(args.cap * sizeof * args.objects);
+
+	for(size_t i = 0; i < expressions.size; i++) {
+		struct Object evaluated = evalExpression(expressions.values[i], env);
+		if(isError(evaluated)) {
+			args.size = 1;
+			args.objects[0] = evaluated;
+			return args;
+		}
+
+		if(args.size >= args.cap) {
+			args.cap *= 2;
+			struct Object* tmp = (struct Object*)realloc(args.objects, args.cap * sizeof * args.objects);
+			if (!tmp) {
+				perror("OUT OF MEMORY");
+				abort();
+			}
+			args.objects = tmp;
+		}
+
+		args.objects[args.size] = evaluated;
+		args.size++;
+	}
+
+	return args;
+}
+
+struct Object applyFunction(struct Object fn, struct ObjectList args) {
+
+	if(fn.type != OBJ_FUNCTION) {
+		return newEvalError("not a function: %s", objectTypeToStr(fn.type));
+	}
+
+	struct ObjectEnvironment* extendedEnv = extendFunctionEnv(fn, args);
+	struct Object evaluated = evalBlockStatement(fn.value.function.body, extendedEnv);
+	//Unwrap return value to stop it from bubbling up to outer functions and stopping execution in all functions
+	return unwrapReturnValue(evaluated);
+}
+
+struct ObjectEnvironment* extendFunctionEnv(struct Object fn, struct ObjectList args) {
+	struct ObjectEnvironment* env = newEnclosedEnvironment(fn.value.function.env);
+
+	for(size_t i = 0; i < fn.value.function.parameters.size; i++) {
+		environmentSet(env, fn.value.function.parameters.values[i].value, args.objects[i]);
+	}
+	return env;
+}
+
+struct Object unwrapReturnValue(struct Object obj) {
+	if(obj.type == OBJ_RETURN) {
+		struct Object* trash = obj.value.retObj;
+		memmove(&obj, obj.value.retObj, sizeof(struct Object));
+		//obj.type = obj.value.retObj->type;
+		//obj.value = obj.value.retObj->value;
+		free(trash);
 	}
 	return obj;
 }

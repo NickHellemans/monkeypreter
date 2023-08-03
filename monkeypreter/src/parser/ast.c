@@ -116,9 +116,7 @@ void retStatementToStr(char* str, const Statement* stmt) {
 
 void blockStatementToStr(char* str, const struct BlockStatement* bs) {
 	for(size_t i = 0; i < bs->size; i++) {
-		strcat_s(str, MAX_PROGRAM_LEN, "{");
 		statementToStr(str, &bs->statements[i]);
-		strcat_s(str, MAX_PROGRAM_LEN, "}");
 	}
 }
 
@@ -172,9 +170,11 @@ void exprStatementToStr(char* str, Expression* expr) {
 				strcat_s(str, MAX_PROGRAM_LEN, expr->function.parameters.values[i].value);
 			}
 			strcat_s(str, MAX_PROGRAM_LEN, ")");
+			strcat_s(str, MAX_PROGRAM_LEN, "{\n");
 			blockStatementToStr(str, expr->function.body);
+			strcat_s(str, MAX_PROGRAM_LEN, "\n}");
 			break;
-
+			
 		case EXPR_CALL:
 			exprStatementToStr(str, expr->call.function);
 			strcat_s(str, MAX_PROGRAM_LEN, "(");

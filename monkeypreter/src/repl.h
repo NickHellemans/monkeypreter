@@ -17,7 +17,7 @@ inline void printParserErrors(Parser* parser) {
 
 inline void repl(void) {
 	printf("Type 'exit' to exit REPL\n");
-	struct ObjectEnvironment env = newEnvironment();
+	struct ObjectEnvironment* env = newEnvironment();
 	while (true) {
 		char inputBuffer[100];
 		printf(">> ");
@@ -30,7 +30,7 @@ inline void repl(void) {
 			continue;
 		}
 
-		struct Object evaluated = evalProgram(program, &env);
+		struct Object evaluated = evalProgram(program, env);
 
 		if (strncmp(inputBuffer, "exit", 4) == 0) {
 			printf("Exiting REPL...");
@@ -42,13 +42,17 @@ inline void repl(void) {
 		//printf("\n");
 
 		//if(evaluated.type != OBJ_NULL) {
-			printf("%s\n\n", inspectObject(&evaluated));
+		if(evaluated.type != OBJ_NULL && evaluated.type != OBJ_FUNCTION && evaluated.type != OBJ_RETURN) {
+			char* objStr = inspectObject(&evaluated);
+			printf("%s\n\n", objStr);
+		}
 		//}
 
 		//Clean up memory
 		//free(progmanStr);
-		freeProgram(program);
-		freeParser(&parser);
+		//free(objStr);
+		//freeProgram(program);;
+		//freeParser(&parser);
 	}
-	deleteEnvironment(&env);
+	//deleteAllEnvironment(env);
 }
