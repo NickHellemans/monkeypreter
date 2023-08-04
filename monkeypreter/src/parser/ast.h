@@ -101,7 +101,7 @@ typedef struct SExpression {
     union {
         int64_t integer;
         bool boolean;
-        char* string;
+        char string[MAX_IDENT_LENGTH];
         Identifier ident;
         struct PrefixExpression prefix;
         struct InfixExpression infix;

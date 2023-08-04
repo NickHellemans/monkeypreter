@@ -984,3 +984,38 @@ TEST(TestParser, TestParser_14_CallParameters) {
 		}
 	}
 }
+
+TEST(TestParser, TestParser_15_StringLiteral) {
+
+	char input[] = "\"Hello World!\"";
+
+	Lexer lexer = createLexer(input);
+	Parser parser = createParser(&lexer);
+
+	Program* program = parseProgram(&parser);
+	checkParserErrors(&parser);
+
+	if (!program) {
+		printf("Parser returned NULL\n");
+		FAIL();
+	}
+
+	if (program->size != 1) {
+		printf("Program does not contain 1 statement, got %llu\n", program->size);
+		FAIL();
+	}
+
+	Statement stmt = program->statements[0];
+	Expression* literal = stmt.expr;
+
+	if (literal->type != EXPR_STRING) {
+		printf("Expr not a string literal, got %d\n", literal->type);
+		FAIL();
+	}
+
+	if(strcmp(literal->string, "Hello World!") != 0) {
+		printf("Literal value not %s, got %s", "Hello World!", literal->string);
+		FAIL();
+	}
+
+}

@@ -145,6 +145,7 @@ void exprStatementToStr(char* str, Expression* expr) {
 
 		case EXPR_INT:
 		case EXPR_BOOL:
+		case EXPR_STRING:
 			strcat_s(str, MAX_PROGRAM_LEN, expr->token.literal);
 			break;
 

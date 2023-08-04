@@ -22,6 +22,7 @@ Expression* parseFunctionLiteralExpr(Parser* parser);
 struct IdentifierList parseFunctionParameters(Parser* parser);
 Expression* parseCallExpression(Parser* parser, Expression* left);
 struct ExpressionList parseCallExprParameters(Parser* parser);
+Expression* parseStringLiteral(Parser* parser);
 void peekError(Parser* parser, TokenType type);
 bool expectPeek(Parser* parser, TokenType tokenType);
 bool curTokenIs(Parser* parser, TokenType tokenType);
@@ -248,6 +249,10 @@ Expression* parseExpr(Parser* parser, enum Precedence precedence) {
 
 		case TokenTypeFunction:
 			leftExpr = parseFunctionLiteralExpr(parser);
+			break;
+
+		case TokenTypeString:
+			leftExpr = parseStringLiteral(parser);
 			break;
 
 		default:
@@ -523,6 +528,13 @@ struct ExpressionList parseCallExprParameters(Parser* parser) {
 
 	return params;
 }
+
+Expression* parseStringLiteral(Parser* parser) {
+	Expression* expr = createExpression(EXPR_STRING, parser->curToken);
+	strcpy_s(expr->string, MAX_IDENT_LENGTH, parser->curToken.literal);
+	return expr;
+}
+
 void peekError(Parser* parser, TokenType type) {
 	char* msg = (char*) malloc(128 * sizeof(char));
 
