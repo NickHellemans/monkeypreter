@@ -16,7 +16,7 @@ const char* tokenTypeToStr(TokenType type) {
 		"FALSE",   "IF",  "ELSE", "RETURN",	"=",  "+",   
 		"-", "!", "*",  "/",
 		"<",  ">",    "==",   "!=", ",",
-		";", "(", ")",  "{", "}", 
+		";", "(", ")",  "{", "}", "STRING",
 		
 	};
 	return tokenNames[type];
@@ -127,6 +127,10 @@ Token nextToken(Lexer* lexer) {
 			token.type = TokenTypeRSquirly;
 			token.literal[0] = lexer->ch;
 			token.literal[1] = '\0';
+			break;
+		case '"':
+			token.type = TokenTypeString;
+			readString(lexer, token.literal);
 			break;
 		case 0:
 			token.type = TokenTypeEof;
@@ -243,4 +247,18 @@ char peekChar(const Lexer* lexer) {
 		return 0;
 
 	return lexer->input[lexer->readPosition];
+}
+
+void readString(Lexer* lexer, char* str) {
+	int index = 0;
+	while(true) {
+		readChar(lexer);
+		if (lexer->ch == '"' || lexer->ch == 0)
+			break;
+
+		str[index] = lexer->ch;
+		index++;
+	}
+
+	str[index] = '\0';
 }

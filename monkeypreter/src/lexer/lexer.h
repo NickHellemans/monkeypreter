@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 #define MAX_IDENT_LENGTH 64
+#define MAX_STRING_LENGTH 1024
 
 typedef enum
 {
@@ -34,6 +35,7 @@ typedef enum
 	TokenTypeRParen,
 	TokenTypeLSquirly,
 	TokenTypeRSquirly,
+	TokenTypeString,
 } TokenType;
 
 typedef struct Token
@@ -62,3 +64,4 @@ static void getIdentType(Token* t);
 void readNumber(Lexer* lexer, Token* token);
 char peekChar(const Lexer* lexer);
 const char* tokenTypeToStr(TokenType type);
+void readString(Lexer* lexer, char* str);	

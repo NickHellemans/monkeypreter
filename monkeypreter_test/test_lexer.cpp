@@ -109,7 +109,9 @@ TEST(TestLexer, TestNextToken_03) {
 		"return false;"
 		"}"
 		"10 == 10;"
-		"10 != 9;";
+		"10 != 9;"
+		"\"foobar\""
+		"\"foo bar\"";
 
 	Lexer lexer = createLexer(input);
 
@@ -187,6 +189,8 @@ TEST(TestLexer, TestNextToken_03) {
 		{TokenTypeNotEqual, "!="},
 		{TokenTypeInt, "9"},
 		{TokenTypeSemicolon, ";"},
+		{TokenTypeString, "foobar"},
+		{TokenTypeString, "foo bar"},
 		{TokenTypeEof, ""},
 	};
 
