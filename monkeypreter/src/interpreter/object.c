@@ -457,3 +457,38 @@ struct Object unwrapReturnValue(struct Object obj) {
 	}
 	return obj;
 }
+
+struct Object createFunctionObject(Expression* expr, struct ObjectEnvironment* env) {
+	struct Object func;
+	func.type = OBJ_FUNCTION;
+
+	//Copy over parameter data
+	struct IdentifierList params;
+	params.size = expr->function.parameters.size;
+	params.cap = expr->function.parameters.cap;
+	params.values = (Identifier*)malloc(expr->function.parameters.cap * sizeof *params.values);
+
+	for(size_t i = 0; i < expr->function.parameters.cap; i++) {
+		memcpy(&params.values[i], &expr->function.parameters.values[i], sizeof(Identifier));
+	}
+
+	func.value.function.parameters = params;
+
+	//Copy over function body data
+	struct BlockStatement* body = (struct BlockStatement*)malloc(sizeof * body);
+	body->token = expr->function.body->token;
+	body->size = expr->function.body->size;
+	body->cap = expr->function.body->cap;
+
+	body->statements = (Statement*)malloc(body->cap * sizeof *body->statements);
+
+	for (size_t i = 0; i < expr->function.parameters.cap; i++) {
+		memcpy(&body->statements[i], &expr->function.body->statements[i], sizeof(Statement));
+	}
+
+	func.value.function.body = body;
+
+	//Copy over env pointer
+	func.value.function.env = env;
+	return func;
+}

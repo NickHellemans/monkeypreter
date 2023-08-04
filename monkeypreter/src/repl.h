@@ -6,6 +6,18 @@
 #include "interpreter/object.h"
 #include "interpreter/environment.h"
 
+const char* MONKEY_FACE = "            __,__\n\
+   .--.  .-\"     \"-.  .--.\n\
+  / .. \\/  .-. .-.  \\/ .. \\\n\
+ | |  '|  /   Y   \\  |'  | |\n\
+ | \\   \\  \\ 0 | 0 /  /   / |\n\
+  \\ '- ,\\.-\"\"\"\"\"\"\"-./, -' /\n\
+   ''-' /_   ^ ^   _\\ '-''\n\
+       |  \\._   _./  |\n\
+       \\   \\ '~' /   /\n\
+        '._ '-=-' _.'\n\
+           '-----'\n\
+";
 
 inline void printParserErrors(Parser* parser) {
 	printf("Oopsie daisy! We ran into some monkey business!\n");
@@ -16,6 +28,7 @@ inline void printParserErrors(Parser* parser) {
 }
 
 inline void repl(void) {
+	printf("%s\n", MONKEY_FACE);
 	printf("Type 'exit' to exit REPL\n");
 	struct ObjectEnvironment* env = newEnvironment();
 	while (true) {
@@ -37,22 +50,16 @@ inline void repl(void) {
 			break;
 		}
 
-		//char* progmanStr = programToStr(program);
-		//printf("%s\n", progmanStr);
-		//printf("\n");
-
-		//if(evaluated.type != OBJ_NULL) {
 		if(evaluated.type != OBJ_NULL && evaluated.type != OBJ_FUNCTION && evaluated.type != OBJ_RETURN) {
 			char* objStr = inspectObject(&evaluated);
 			printf("%s\n\n", objStr);
+			free(objStr);
 		}
-		//}
+		
 
 		//Clean up memory
-		//free(progmanStr);
-		//free(objStr);
-		//freeProgram(program);;
-		//freeParser(&parser);
+		//freeProgram(program);
+		freeParser(&parser);
 	}
-	//deleteAllEnvironment(env);
+	deleteAllEnvironment(env);
 }

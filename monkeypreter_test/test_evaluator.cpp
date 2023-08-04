@@ -301,7 +301,7 @@ TEST(TestEval, TestEval_08_FunctionObject) {
 		FAIL();
 	}
 
-	char expectedBody[] = "{(x + 2)}";
+	char expectedBody[] = "(x + 2)";
 
 	char* body = (char*)malloc(MAX_PROGRAM_LEN);
 	body[0] = '\0';
