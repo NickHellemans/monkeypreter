@@ -351,3 +351,21 @@ TEST(TestEval, TestEval_10_Closures) {
 	}
 	
 }
+
+TEST(TestEval, TestEval_10_Strings) {
+
+	char input[] = "\"Hello World!\"";
+	char expected[] = "Hello World!";
+
+	struct Object evaluated = testEval(input);
+	if(evaluated.type != OBJ_STRING) {
+		printf("Object is not a string, got %s\n", objectTypeToStr(evaluated.type));
+		FAIL();
+	}
+
+	if(strcmp(evaluated.value.string, expected) != 0) {
+		printf("String has wrong value, expected: %s, got %s\n", expected, evaluated.value.string);
+		FAIL();
+	}
+
+}

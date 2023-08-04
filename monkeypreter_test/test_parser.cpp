@@ -988,6 +988,7 @@ TEST(TestParser, TestParser_14_CallParameters) {
 TEST(TestParser, TestParser_15_StringLiteral) {
 
 	char input[] = "\"Hello World!\"";
+	char expected[] = "Hello World!";
 
 	Lexer lexer = createLexer(input);
 	Parser parser = createParser(&lexer);
@@ -1013,8 +1014,8 @@ TEST(TestParser, TestParser_15_StringLiteral) {
 		FAIL();
 	}
 
-	if(strcmp(literal->string, "Hello World!") != 0) {
-		printf("Literal value not %s, got %s", "Hello World!", literal->string);
+	if(strcmp(literal->string, expected) != 0) {
+		printf("Literal value not %s, got %s", expected, literal->string);
 		FAIL();
 	}
 

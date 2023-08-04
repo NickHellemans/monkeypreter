@@ -12,6 +12,7 @@ typedef enum ObjectType {
 	OBJ_RETURN,
 	OBJ_ERROR,
 	OBJ_FUNCTION,
+	OBJ_STRING,
 } ObjectType;
 
 struct ErrorObject {
@@ -27,6 +28,7 @@ struct FunctionObject {
 union ObjectVal {
 	bool boolean;
 	int64_t integer;
+	char string[MAX_IDENT_LENGTH];
 	struct Object* retObj;
 	struct ErrorObject error;
 	struct FunctionObject function;

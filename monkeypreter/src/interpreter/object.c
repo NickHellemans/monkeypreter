@@ -80,6 +80,10 @@ char* inspectObject(const struct Object* obj) {
 			blockStatementToStr(msg, obj->value.function.body);
 			strcat_s(msg, MAX_OBJECT_SIZE, "\n}");
 			break;
+
+		case OBJ_STRING:
+			success = sprintf_s(msg, MAX_OBJECT_SIZE, "%s\n", obj->value.string);
+			break;
 	}
 	return msg;
 }
@@ -93,6 +97,7 @@ const char* objectTypeToStr(const enum ObjectType type)
 		"RETURN",
 		"ERROR",
 		"FUNCTION",
+		"STRING",
 	};
 
 	return objectNames[type];
@@ -240,8 +245,11 @@ struct Object evalExpression(Expression* expr, struct ObjectEnvironment* env) {
 			//Apply function with evaluated args
 			return applyFunction(calledFunc, args);
 
+		case EXPR_STRING:
+			obj.type = OBJ_STRING;
+			strcpy_s(obj.value.string, MAX_IDENT_LENGTH, expr->string);
+			break;
 	}
-
 
 	return obj;
 }
