@@ -309,6 +309,10 @@ struct Object evalInfixExpression(enum OperatorType op, struct Object left, stru
 		return nativeBoolToBoolObj(left.value.boolean != right.value.boolean);
 	}
 
+	if(left.type == OBJ_STRING && right.type == OBJ_STRING) {
+		return evalStringInfixExpression(op, left, right);
+	}
+
 	return newEvalError("unknown operator: %s %s %s", objectTypeToStr(left.type), operatorToStr(op), objectTypeToStr(right.type));
 
 }
@@ -499,4 +503,19 @@ struct Object createFunctionObject(Expression* expr, struct ObjectEnvironment* e
 	//Copy over env pointer
 	func.value.function.env = env;
 	return func;
+}
+
+struct Object evalStringInfixExpression(enum OperatorType op, struct Object left, struct Object right) {
+
+	if(op != OP_ADD) {
+		return newEvalError("unknown operator: %s %s %s", objectTypeToStr(left.type), operatorToStr(op), objectTypeToStr(right.type));
+	}
+
+	struct Object obj;
+	obj.type = OBJ_STRING;
+
+	strcpy_s(obj.value.string, MAX_IDENT_LENGTH, left.value.string);
+	strcat_s(obj.value.string, MAX_IDENT_LENGTH, right.value.string);
+
+	return obj;
 }

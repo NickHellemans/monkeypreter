@@ -64,3 +64,4 @@ struct Object applyFunction(struct Object fn, struct ObjectList args);
 struct ObjectEnvironment* extendFunctionEnv(struct Object fn, struct ObjectList args);
 struct Object unwrapReturnValue(struct Object obj);
 struct Object createFunctionObject(Expression* expr, struct ObjectEnvironment* env);
+struct Object evalStringInfixExpression(enum OperatorType op, struct Object left, struct Object right);

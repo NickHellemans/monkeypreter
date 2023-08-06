@@ -243,9 +243,13 @@ TEST(TestEval, TestEval_06_ErrorHandling) {
 		"foobar",
 		"identifier not found: foobar",
 		},
+		{
+			R"("Hello" - "World")",
+		"unknown operator: STRING - STRING",
+		},
 	};
 
-	for (int i = 0; i < 8; i++) {
+	for (int i = 0; i < 9; i++) {
 		struct Object evaluated = testEval(tests[i].input);
 		if(evaluated.type != OBJ_ERROR) {
 			printf("No error object returned, got %s\n", objectTypeToStr(evaluated.type));
@@ -364,6 +368,24 @@ TEST(TestEval, TestEval_10_Strings) {
 	}
 
 	if(strcmp(evaluated.value.string, expected) != 0) {
+		printf("String has wrong value, expected: %s, got %s\n", expected, evaluated.value.string);
+		FAIL();
+	}
+
+}
+
+TEST(TestEval, TestEval_11_StringConcat) {
+
+	const char input[] = R"("Hello" + " " + "World!")";
+	char expected[] = "Hello World!";
+
+	struct Object evaluated = testEval(input);
+	if (evaluated.type != OBJ_STRING) {
+		printf("Object is not a string, got %s\n", objectTypeToStr(evaluated.type));
+		FAIL();
+	}
+
+	if (strcmp(evaluated.value.string, expected) != 0) {
 		printf("String has wrong value, expected: %s, got %s\n", expected, evaluated.value.string);
 		FAIL();
 	}
