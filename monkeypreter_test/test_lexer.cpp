@@ -111,7 +111,9 @@ TEST(TestLexer, TestNextToken_03) {
 		"10 == 10;"
 		"10 != 9;"
 		"\"foobar\""
-		"\"foo bar\"";
+		"\"foo bar\""
+		"[1, 2];"
+	;
 
 	Lexer lexer = createLexer(input);
 
@@ -191,6 +193,12 @@ TEST(TestLexer, TestNextToken_03) {
 		{TokenTypeSemicolon, ";"},
 		{TokenTypeString, "foobar"},
 		{TokenTypeString, "foo bar"},
+		{TokenTypeLBracket, "["},
+		{TokenTypeInt, "1"},
+		{TokenTypeComma, ","},
+		{TokenTypeInt, "2"},
+		{TokenTypeRBracket, "]"},
+		{TokenTypeSemicolon, ";"},
 		{TokenTypeEof, ""},
 	};
 

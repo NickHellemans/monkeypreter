@@ -95,6 +95,17 @@ struct CallExpression {
     struct ExpressionList arguments;
 };
 
+struct ArrayLiteral {
+    Token token;
+    struct ExpressionList elements;
+};
+
+struct IndexExpression {
+    Token token;
+    struct SExpression* left;
+    struct SExpression* index;
+};
+
 typedef struct SExpression {
     enum ExpressionType type;
 	Token token;
@@ -108,6 +119,8 @@ typedef struct SExpression {
         struct IfExpression ifelse;
         struct FunctionLiteral function;
         struct CallExpression call;
+        struct ArrayLiteral array;
+        struct IndexExpression indexExpr;
     };
 } Expression;
 

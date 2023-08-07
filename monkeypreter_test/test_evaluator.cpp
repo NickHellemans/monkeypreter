@@ -392,7 +392,7 @@ TEST(TestEval, TestEval_11_StringConcat) {
 
 }
 
-enum ExpectedType {EXPECT_INT, EXPECT_STRING};
+enum ExpectedType {EXPECT_INT, EXPECT_STRING, EXPECT_NULL};
 
 TEST(TestEval, TestEval_12_BuiltinFunctions) {
 	struct TestInteger {
@@ -432,6 +432,118 @@ TEST(TestEval, TestEval_12_BuiltinFunctions) {
 					FAIL();
 				}
 				break;
+		}
+	}
+}
+
+TEST(TestEval, TestEval_13_ArrayLiterals) {
+
+	const char input[] = "[1, 2 * 2, 3 + 3]";
+
+	struct Object evaluated = testEval(input);
+	printf("After eval, type: %s\n", objectTypeToStr(evaluated.type));
+	if (evaluated.type != OBJ_ARRAY) {
+		printf("Object is not an array, got %s\n", objectTypeToStr(evaluated.type));
+		FAIL();
+	}
+
+	if(evaluated.value.arr.size != 3) {
+		printf("array has wrong number of elements. got=%llu", evaluated.value.arr.size);
+		FAIL();
+	}
+
+	if(!testIntegerObject(evaluated.value.arr.objects[0], 1)) {
+		FAIL();
+	}
+
+	if (!testIntegerObject(evaluated.value.arr.objects[1], 4)) {
+		FAIL();
+	}
+
+	if (!testIntegerObject(evaluated.value.arr.objects[2], 6)) {
+		FAIL();
+	}
+}
+
+TEST(TestEval, TestEval_14_ArrayIndexExpr) {
+	struct TestIndexExpression {
+		char input[65];
+		union {
+			int64_t expectedInt;
+			void* ptr;
+		};
+		//0 for int, 1 for string
+		ExpectedType type;
+
+	} tests[]{
+		{
+		"[1, 2, 3][0]",
+		{.expectedInt = 1},
+			EXPECT_INT
+		},
+		{
+		"[1, 2, 3][1]",
+					{.expectedInt = 2},
+			EXPECT_INT
+		},
+		{
+		"[1, 2, 3][2]",
+				{.expectedInt = 3},
+			EXPECT_INT,
+		},
+		{
+		"let i = 0; [1][i];",
+				{.expectedInt = 1},
+			EXPECT_INT,
+		},
+		{
+		"[1, 2, 3][1 + 1];",
+				{.expectedInt = 3},
+			EXPECT_INT,
+		},
+		{
+		"let myArray = [1, 2, 3]; myArray[2];",
+				{.expectedInt = 3},
+			EXPECT_INT,
+		},
+		{
+		"let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];",
+				{.expectedInt = 6},
+			EXPECT_INT,
+		},
+		{
+		"let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]",
+				{.expectedInt = 2},
+			EXPECT_INT,
+		},
+		{
+		"[1, 2, 3][3]",
+					{.ptr = nullptr},
+			EXPECT_NULL
+		},
+		{
+		"[1, 2, 3][-1]",
+				{.ptr = nullptr},
+			EXPECT_NULL
+		},
+	};
+
+	for (int i = 0; i < 10; i++) {
+		struct Object evaluated = testEval(tests[i].input);
+		printf("After eval: type = %s\n", objectTypeToStr(evaluated.type));
+		printf("%s\n", inspectObject(&evaluated));
+		switch (tests[i].type) {
+
+		case EXPECT_INT:
+			if (!testIntegerObject(evaluated, tests[i].expectedInt)) {
+				FAIL();
+			}
+			break;
+
+		case EXPECT_NULL:
+			if(!testNullObject(evaluated)) {
+				FAIL();
+			}
 		}
 	}
 }

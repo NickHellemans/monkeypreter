@@ -21,8 +21,10 @@ struct BlockStatement* parseBlockStatement(Parser* parser);
 Expression* parseFunctionLiteralExpr(Parser* parser);
 struct IdentifierList parseFunctionParameters(Parser* parser);
 Expression* parseCallExpression(Parser* parser, Expression* left);
-struct ExpressionList parseCallExprParameters(Parser* parser);
+struct ExpressionList parseExpressionList(Parser* parser, TokenType end);
 Expression* parseStringLiteral(Parser* parser);
+Expression* parseArrayLiteral(Parser* parser);
+Expression* parseIndexExpression(Parser* parser, Expression* left);
 void peekError(Parser* parser, TokenType type);
 bool expectPeek(Parser* parser, TokenType tokenType);
 bool curTokenIs(Parser* parser, TokenType tokenType);
@@ -36,6 +38,7 @@ enum Precedence {
 	PRODUCT,        // * and /
 	PREFIX,         // - or !x
 	CALL,           // fn()
+	INDEX,			//arr[0]
 };
 
 
@@ -60,6 +63,9 @@ enum Precedence getTokenPrecedence(Token token) {
 
 		case TokenTypeLParen:
 			return CALL;
+
+		case TokenTypeLBracket:
+			return INDEX;
 
 		default:
 			return LOWEST;
@@ -255,6 +261,10 @@ Expression* parseExpr(Parser* parser, enum Precedence precedence) {
 			leftExpr = parseStringLiteral(parser);
 			break;
 
+		case TokenTypeLBracket:
+			leftExpr = parseArrayLiteral(parser);
+			break;
+
 		default:
 			//Error msg here?
 			return NULL;
@@ -277,6 +287,11 @@ Expression* parseExpr(Parser* parser, enum Precedence precedence) {
 			case TokenTypeLParen:
 				setParserNextToken(parser);
 				leftExpr = parseCallExpression(parser, leftExpr);
+				break;
+
+			case TokenTypeLBracket:
+				setParserNextToken(parser);
+				leftExpr = parseIndexExpression(parser, leftExpr);
 				break;
 
 			default:
@@ -480,11 +495,11 @@ Expression* parseCallExpression(Parser* parser, Expression* left) {
 	Expression* expr = createExpression(EXPR_CALL, parser->curToken);
 	expr->call.token = parser->curToken;
 	expr->call.function = left;
-	expr->call.arguments = parseCallExprParameters(parser);
+	expr->call.arguments = parseExpressionList(parser, TokenTypeRParen);
 	return expr;
 }
 
-struct ExpressionList parseCallExprParameters(Parser* parser) {
+struct ExpressionList parseExpressionList(Parser* parser, TokenType end) {
 	struct ExpressionList params = { NULL, 0, 1};
 
 	if (peekTokenIs(parser, TokenTypeRParen)) {
@@ -521,7 +536,7 @@ struct ExpressionList parseCallExprParameters(Parser* parser) {
 		params.size++;
 	}
 
-	if (!expectPeek(parser, TokenTypeRParen)) {
+	if (!expectPeek(parser, end)) {
 		free(params.values);
 		perror("NOT VALID SYNTAX");
 	}
@@ -532,6 +547,26 @@ struct ExpressionList parseCallExprParameters(Parser* parser) {
 Expression* parseStringLiteral(Parser* parser) {
 	Expression* expr = createExpression(EXPR_STRING, parser->curToken);
 	strcpy_s(expr->string, MAX_IDENT_LENGTH, parser->curToken.literal);
+	return expr;
+}
+
+Expression* parseArrayLiteral(Parser* parser) {
+	Expression* expr = createExpression(EXPR_ARRAY, parser->curToken);
+	expr->array.token = parser->curToken;
+	expr->array.elements = parseExpressionList(parser, TokenTypeRBracket);
+	return expr;
+}
+
+Expression* parseIndexExpression(Parser* parser, Expression* left) {
+	Expression* expr = createExpression(EXPR_INDEX, parser->curToken);
+	expr->indexExpr.token = parser->curToken;
+	setParserNextToken(parser);
+	expr->indexExpr.left = left;
+	expr->indexExpr.index = parseExpr(parser, (enum Precedence)LOWEST);
+
+	if(!expectPeek(parser, TokenTypeRBracket)) {
+		return NULL;
+	}
 	return expr;
 }
 

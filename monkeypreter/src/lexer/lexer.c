@@ -16,7 +16,7 @@ const char* tokenTypeToStr(TokenType type) {
 		"FALSE",   "IF",  "ELSE", "RETURN",	"=",  "+",   
 		"-", "!", "*",  "/",
 		"<",  ">",    "==",   "!=", ",",
-		";", "(", ")",  "{", "}", "STRING",
+		";", "(", ")",  "{", "}", "STRING", "[", "]",
 		
 	};
 	return tokenNames[type];
@@ -131,6 +131,16 @@ Token nextToken(Lexer* lexer) {
 		case '"':
 			token.type = TokenTypeString;
 			readString(lexer, token.literal);
+			break;
+		case '[':
+			token.type = TokenTypeLBracket;
+			token.literal[0] = lexer->ch;
+			token.literal[1] = '\0';
+			break;
+		case ']':
+			token.type = TokenTypeRBracket;
+			token.literal[0] = lexer->ch;
+			token.literal[1] = '\0';
 			break;
 		case 0:
 			token.type = TokenTypeEof;

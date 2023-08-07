@@ -562,9 +562,18 @@ TEST(TestParser, TestParser_07_OperatorPrecedence) {
 		"add(a + b + c * d / f + g)",
 		"add((((a + b) + ((c * d) / f)) + g))",
 		},
+		//Index expressions
+		{
+		"a * [1, 2, 3, 4][b * c] * d",
+		"((a * ([1, 2, 3, 4][(b * c)])) * d)",
+				},
+		{
+		"add(a * b[2], b[1], 2 * [1, 2][1])",
+		"add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))",
+		},
 	};
 
-	for (int i = 0; i < 25; i++) {
+	for (int i = 0; i < 27; i++) {
 		printf("At %d iteration\n", i);
 		printf("Input = %s\n", precedenceTests[i].input);
 		printf("Expected = %s\n", precedenceTests[i].expected);
@@ -1016,6 +1025,91 @@ TEST(TestParser, TestParser_15_StringLiteral) {
 
 	if(strcmp(literal->string, expected) != 0) {
 		printf("Literal value not %s, got %s", expected, literal->string);
+		FAIL();
+	}
+
+}
+
+TEST(TestParser, TestParser_16_ArrayLiteral) {
+
+	char input[] = "[1, 2 * 2, 3 + 3]";
+	char expected[] = "Hello World!";
+
+	Lexer lexer = createLexer(input);
+	Parser parser = createParser(&lexer);
+
+	Program* program = parseProgram(&parser);
+	checkParserErrors(&parser);
+
+	if (!program) {
+		printf("Parser returned NULL\n");
+		FAIL();
+	}
+
+	if (program->size != 1) {
+		printf("Program does not contain 1 statement, got %llu\n", program->size);
+		FAIL();
+	}
+
+	Statement stmt = program->statements[0];
+	Expression* array = stmt.expr;
+
+	if (array->type != EXPR_ARRAY) {
+		printf("Expr not a array literal, got %d\n", array->type);
+		FAIL();
+	}
+
+	if(array->array.elements.size != 3) {
+		printf("Array size not = 3, got %llu\n", array->array.elements.size);
+		FAIL();
+	}
+
+	if(!testIntegerLiteral(array->array.elements.values[0], 1)) {
+		FAIL();
+	}
+
+	if (!testInfixExpression(array->array.elements.values[1], { 2 }, OP_MULTIPLY, {2})) {
+		FAIL();
+	}
+
+	if (!testInfixExpression(array->array.elements.values[2], { 3 }, OP_ADD, { 3 })) {
+		FAIL();
+	}
+}
+
+TEST(TestParser, TestParser_17_IndexExpressions) {
+
+	char input[] = "myArray[1 + 1]";
+
+	Lexer lexer = createLexer(input);
+	Parser parser = createParser(&lexer);
+
+	Program* program = parseProgram(&parser);
+	checkParserErrors(&parser);
+
+	if (!program) {
+		printf("Parser returned NULL\n");
+		FAIL();
+	}
+
+	if (program->size != 1) {
+		printf("Program does not contain 1 statement, got %llu\n", program->size);
+		FAIL();
+	}
+
+	Statement stmt = program->statements[0];
+	Expression* indexExpr = stmt.expr;
+
+	if (indexExpr->type != EXPR_INDEX) {
+		printf("Expr not a index expression, got %d\n", indexExpr->type);
+		FAIL();
+	}
+
+	if (!testIdentifier(indexExpr->indexExpr.left, "myArray")) {
+		FAIL();
+	}
+
+	if (!testInfixExpression(indexExpr->indexExpr.index, { 1 }, OP_ADD, { 1 })) {
 		FAIL();
 	}
 

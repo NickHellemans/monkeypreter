@@ -35,6 +35,10 @@ inline void repl(void) {
 		char inputBuffer[100];
 		printf(">> ");
 		char* success = fgets(inputBuffer, sizeof(inputBuffer), stdin);
+
+		if (inputBuffer[0] == '\n')
+			continue;
+			
 		Lexer lexer = createLexer(inputBuffer);
 		Parser parser = createParser(&lexer);
 		Program* program = parseProgram(&parser);
@@ -43,12 +47,13 @@ inline void repl(void) {
 			continue;
 		}
 
-		struct Object evaluated = evalProgram(program, env);
-
 		if (strncmp(inputBuffer, "exit", 4) == 0) {
 			printf("Exiting REPL...");
 			break;
 		}
+
+		struct Object evaluated = evalProgram(program, env);
+
 
 		if(evaluated.type != OBJ_NULL && evaluated.type != OBJ_FUNCTION && evaluated.type != OBJ_RETURN) {
 			char* objStr = inspectObject(&evaluated);
@@ -60,6 +65,7 @@ inline void repl(void) {
 		//Clean up memory
 		//freeProgram(program);
 		freeParser(&parser);
+		
 	}
 	deleteAllEnvironment(env);
 }

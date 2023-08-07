@@ -188,6 +188,27 @@ void exprStatementToStr(char* str, Expression* expr) {
 			strcat_s(str, MAX_PROGRAM_LEN, ")");
 			break;
 
+		case EXPR_ARRAY:
+			strcat_s(str, MAX_PROGRAM_LEN, "[");
+			for (size_t i = 0; i < expr->array.elements.size; i++) {
+				if (i > 0) {
+					strcat_s(str, MAX_PROGRAM_LEN, ", ");
+				}
+				exprStatementToStr(str, expr->array.elements.values[i]);
+			}
+			strcat_s(str, MAX_PROGRAM_LEN, "]");
+			break;
+
+		case EXPR_INDEX:
+			strcat_s(str, MAX_PROGRAM_LEN, "(");
+			exprStatementToStr(str, expr->indexExpr.left);
+			strcat_s(str, MAX_PROGRAM_LEN, "[");
+			exprStatementToStr(str, expr->indexExpr.index);
+			strcat_s(str, MAX_PROGRAM_LEN, "]");
+			strcat_s(str, MAX_PROGRAM_LEN, ")");
+			break;
+
+
 		default:
 			strcat_s(str, MAX_PROGRAM_LEN, expr->token.literal);
 	}

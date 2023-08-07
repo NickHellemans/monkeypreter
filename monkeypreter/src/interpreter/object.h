@@ -14,6 +14,7 @@ typedef enum ObjectType {
 	OBJ_FUNCTION,
 	OBJ_STRING,
 	OBJ_BUILTIN,
+	OBJ_ARRAY,
 } ObjectType;
 
 struct ErrorObject {
@@ -41,6 +42,8 @@ union ObjectVal {
 	struct FunctionObject function;
 	//Builtin fn pointer that returns object
 	struct Object (*builtin) (struct ObjectList args);
+	//Array
+	struct ObjectList arr;
 };
 
 struct Object {
@@ -68,3 +71,6 @@ struct ObjectEnvironment* extendFunctionEnv(struct Object fn, struct ObjectList 
 struct Object unwrapReturnValue(struct Object obj);
 struct Object createFunctionObject(Expression* expr, struct ObjectEnvironment* env);
 struct Object evalStringInfixExpression(enum OperatorType op, struct Object left, struct Object right);
+
+struct Object evalIndexExpression(struct Object left, struct Object index);
+struct Object evalArrayIndexExpression(struct Object arr, struct Object index);

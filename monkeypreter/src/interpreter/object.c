@@ -48,22 +48,22 @@ char* inspectObject(const struct Object* obj) {
 
 	switch (obj->type) {
 		case OBJ_NULL:
-			success = sprintf_s(msg, MAX_OBJECT_SIZE, "NULL\n");
+			success = sprintf_s(msg, MAX_OBJECT_SIZE, "NULL");
 			break;
 
 		case OBJ_INT:
-			success = sprintf_s(msg, MAX_OBJECT_SIZE, "%lld\n", obj->value.integer);
+			success = sprintf_s(msg, MAX_OBJECT_SIZE, "%lld", obj->value.integer);
 			break;
 
 		case OBJ_BOOL:
-			success = sprintf_s(msg, MAX_OBJECT_SIZE, "%s\n", obj->value.boolean ? "true" : "false");
+			success = sprintf_s(msg, MAX_OBJECT_SIZE, "%s", obj->value.boolean ? "true" : "false");
 			break;
 
 		case OBJ_RETURN:
 			return inspectObject(obj->value.retObj);
 
 		case OBJ_ERROR:
-			success = sprintf_s(msg, MAX_OBJECT_SIZE, "ERROR: %s\n", obj->value.error.msg);
+			success = sprintf_s(msg, MAX_OBJECT_SIZE, "ERROR: %s", obj->value.error.msg);
 			break;
 
 		case OBJ_FUNCTION:
@@ -88,6 +88,20 @@ char* inspectObject(const struct Object* obj) {
 		case OBJ_BUILTIN:
 			strcat_s(msg, MAX_OBJECT_SIZE, "builtin function\n");
 			break;
+
+		case OBJ_ARRAY:
+			strcat_s(msg, MAX_OBJECT_SIZE, "[");
+			for (size_t i = 0; i < obj->value.arr.size; i++) {
+				if (i > 0) {
+					strcat_s(msg, MAX_OBJECT_SIZE, ", ");
+				}
+
+				strcat_s(msg, MAX_OBJECT_SIZE, inspectObject(&obj->value.arr.objects[i]));
+			}
+
+			strcat_s(msg, MAX_OBJECT_SIZE, "]");
+
+			break;
 	}
 	return msg;
 }
@@ -103,6 +117,7 @@ const char* objectTypeToStr(const enum ObjectType type)
 		"FUNCTION",
 		"STRING",
 		"BUILTIN",
+		"ARRAY",
 	};
 
 	return objectNames[type];
@@ -253,6 +268,29 @@ struct Object evalExpression(Expression* expr, struct ObjectEnvironment* env) {
 			obj.type = OBJ_STRING;
 			strcpy_s(obj.value.string, MAX_IDENT_LENGTH, expr->string);
 			break;
+
+		case EXPR_ARRAY:
+			obj.type = OBJ_ARRAY;
+			struct ObjectList elements = evalExpressions(expr->array.elements, env);
+			if (elements.size == 1 && isError(elements.objects[0])) {
+				return elements.objects[0];
+			}
+
+			obj.value.arr = elements;
+			break;
+
+		case EXPR_INDEX:
+			left = evalExpression(expr->indexExpr.left, env);
+			if (isError(left)) {
+				return left;
+			}
+
+			struct Object index = evalExpression(expr->indexExpr.index, env);
+			if (isError(index)) {
+				return index;
+			}
+
+			return evalIndexExpression(left, index);
 	}
 
 	return obj;
@@ -533,4 +571,23 @@ struct Object evalStringInfixExpression(enum OperatorType op, struct Object left
 	strcat_s(obj.value.string, MAX_IDENT_LENGTH, right.value.string);
 
 	return obj;	
+}
+
+struct Object evalIndexExpression(struct Object left, struct Object index) {
+	if(left.type == OBJ_ARRAY && index.type == OBJ_INT) {
+		return evalArrayIndexExpression(left, index);
+	}
+
+	return newEvalError("index operator not supported: %s", objectTypeToStr(left.type));
+}
+
+struct Object evalArrayIndexExpression(struct Object arr, struct Object index) {
+	int64_t idx = index.value.integer;
+	size_t max = arr.value.arr.size - 1;
+
+	if(idx < 0 || (size_t)idx > max) {
+		return NullObj;
+	}
+
+	return arr.value.arr.objects[idx];
 }

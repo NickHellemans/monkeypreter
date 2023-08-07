@@ -36,6 +36,8 @@ typedef enum
 	TokenTypeLSquirly,
 	TokenTypeRSquirly,
 	TokenTypeString,
+	TokenTypeLBracket,
+	TokenTypeRBracket,
 } TokenType;
 
 typedef struct Token
