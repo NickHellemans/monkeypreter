@@ -1,9 +1,9 @@
-#include <stdlib.h>
 #include "object.h"
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-
+#include "builtins.h"
 #include "hash_map.h"
 
 const struct Object NullObj = {
@@ -84,6 +84,10 @@ char* inspectObject(const struct Object* obj) {
 		case OBJ_STRING:
 			success = sprintf_s(msg, MAX_OBJECT_SIZE, "%s\n", obj->value.string);
 			break;
+
+		case OBJ_BUILTIN:
+			strcat_s(msg, MAX_OBJECT_SIZE, "builtin function\n");
+			break;
 	}
 	return msg;
 }
@@ -98,6 +102,7 @@ const char* objectTypeToStr(const enum ObjectType type)
 		"ERROR",
 		"FUNCTION",
 		"STRING",
+		"BUILTIN",
 	};
 
 	return objectNames[type];
@@ -132,7 +137,6 @@ bool isError(struct Object obj) {
 
 struct Object evalProgram(Program* program, struct ObjectEnvironment* env) {
 	struct Object obj;
-
 	for (size_t i = 0; i < program->size; i++) {
 		obj = evalStatement(&program->statements[i], env);
 		if (obj.type == OBJ_RETURN) {
@@ -401,10 +405,17 @@ struct Object newEvalError(const char* format, ...) {
 
 struct Object evalIdentifier(Expression* expr, struct ObjectEnvironment* env) {
 	struct Object obj = environmentGet(env, expr->ident.value);
-	if(obj.type == OBJ_NULL) {
-		return newEvalError("identifier not found: %s", expr->ident.value);
+	if(obj.type != OBJ_NULL) {
+		return obj;
 	}
-	return obj;
+
+	obj = getBuiltin(expr->ident.value);
+
+	if(obj.type != OBJ_NULL) {
+		return obj;
+	}
+
+	return newEvalError("identifier not found: %s", expr->ident.value);
 }
 
 struct ObjectList evalExpressions(struct ExpressionList expressions, struct ObjectEnvironment* env) {
@@ -440,14 +451,18 @@ struct ObjectList evalExpressions(struct ExpressionList expressions, struct Obje
 
 struct Object applyFunction(struct Object fn, struct ObjectList args) {
 
-	if(fn.type != OBJ_FUNCTION) {
-		return newEvalError("not a function: %s", objectTypeToStr(fn.type));
+	if(fn.type == OBJ_FUNCTION) {
+		struct ObjectEnvironment* extendedEnv = extendFunctionEnv(fn, args);
+		struct Object evaluated = evalBlockStatement(fn.value.function.body, extendedEnv);
+		//Unwrap return value to stop it from bubbling up to outer functions and stopping execution in all functions
+		return unwrapReturnValue(evaluated);
 	}
 
-	struct ObjectEnvironment* extendedEnv = extendFunctionEnv(fn, args);
-	struct Object evaluated = evalBlockStatement(fn.value.function.body, extendedEnv);
-	//Unwrap return value to stop it from bubbling up to outer functions and stopping execution in all functions
-	return unwrapReturnValue(evaluated);
+	if(fn.type == OBJ_BUILTIN) {
+		return fn.value.builtin(args);
+	}
+
+	return newEvalError("not a function: %s", objectTypeToStr(fn.type));
 }
 
 struct ObjectEnvironment* extendFunctionEnv(struct Object fn, struct ObjectList args) {
@@ -517,5 +532,5 @@ struct Object evalStringInfixExpression(enum OperatorType op, struct Object left
 	strcpy_s(obj.value.string, MAX_IDENT_LENGTH, left.value.string);
 	strcat_s(obj.value.string, MAX_IDENT_LENGTH, right.value.string);
 
-	return obj;
+	return obj;	
 }

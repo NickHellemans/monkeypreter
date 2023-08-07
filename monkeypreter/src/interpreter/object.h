@@ -13,6 +13,7 @@ typedef enum ObjectType {
 	OBJ_ERROR,
 	OBJ_FUNCTION,
 	OBJ_STRING,
+	OBJ_BUILTIN,
 } ObjectType;
 
 struct ErrorObject {
@@ -25,6 +26,12 @@ struct FunctionObject {
 	struct ObjectEnvironment* env;
 };
 
+struct ObjectList {
+	size_t size;
+	size_t cap;
+	struct Object* objects;
+};
+
 union ObjectVal {
 	bool boolean;
 	int64_t integer;
@@ -32,17 +39,13 @@ union ObjectVal {
 	struct Object* retObj;
 	struct ErrorObject error;
 	struct FunctionObject function;
+	//Builtin fn pointer that returns object
+	struct Object (*builtin) (struct ObjectList args);
 };
 
 struct Object {
 	ObjectType type;
 	union ObjectVal value;
-};
-
-struct ObjectList {
-	size_t size;
-	size_t cap;
-	struct Object* objects;
 };
 
 char* inspectObject(const struct Object* obj);

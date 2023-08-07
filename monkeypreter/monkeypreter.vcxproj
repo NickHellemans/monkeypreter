@@ -139,6 +139,7 @@
     <ClCompile Include="src\parser\parser.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\interpreter\builtins.h" />
     <ClInclude Include="src\interpreter\environment.h" />
     <ClInclude Include="src\interpreter\hash_map.h" />
     <ClInclude Include="src\interpreter\object.h" />

@@ -391,3 +391,47 @@ TEST(TestEval, TestEval_11_StringConcat) {
 	}
 
 }
+
+enum ExpectedType {EXPECT_INT, EXPECT_STRING};
+
+TEST(TestEval, TestEval_12_BuiltinFunctions) {
+	struct TestInteger {
+		char input[55];
+		union {
+			int64_t expectedInt;
+			char expectedString[128];
+		};
+		//0 for int, 1 for string
+		ExpectedType type;
+
+	} tests[]{
+		{"len(\"\")", {.expectedInt = 0}, EXPECT_INT},
+		{"len(\"four\")", {.expectedInt = 4}, EXPECT_INT},
+		{"len(\"hello world\")", {.expectedInt = 11}, EXPECT_INT},
+		{"len(1)", {.expectedString = "argument to `len` not supported, got INTEGER"}, EXPECT_STRING},
+		{R"(len("one", "two"))", {.expectedString = "wrong number of arguments. got=2, want=1"}, EXPECT_STRING},
+	};
+
+	for (int i = 0; i < 5; i++) {
+		struct Object evaluated = testEval(tests[i].input);
+		switch (tests[i].type) {
+			case EXPECT_INT:
+				if (!testIntegerObject(evaluated, tests[i].expectedInt)) {
+						FAIL();
+					}
+					break;
+
+			case EXPECT_STRING:
+				if(evaluated.type != OBJ_ERROR) {
+					printf("Object is not an error, got %s", objectTypeToStr(evaluated.type));
+					FAIL();
+				}
+
+				if(strcmp(evaluated.value.error.msg, tests[i].expectedString) != 0) {
+					printf("Wrong error msg, expected: %s, got: %s\n", tests[i].expectedString, evaluated.value.error.msg);
+					FAIL();
+				}
+				break;
+		}
+	}
+}

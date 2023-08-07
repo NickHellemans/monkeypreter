@@ -59,5 +59,8 @@
     <ClInclude Include="src\interpreter\environment.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\interpreter\builtins.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
