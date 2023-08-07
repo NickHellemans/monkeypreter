@@ -197,7 +197,6 @@ struct Object evalStatement(Statement* stmt, struct ObjectEnvironment* env) {
 			}
 			//Now what? --> Add identifier to env
 			environmentSet(env, stmt->identifier.value, obj);
-			printf("ADDED `%s` TO THE ENV\n", stmt->identifier.value);
 			return obj;
 		}
 	}

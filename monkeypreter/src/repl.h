@@ -32,7 +32,7 @@ inline void repl(void) {
 	printf("Type 'exit' to exit REPL\n");
 	struct ObjectEnvironment* env = newEnvironment();
 	while (true) {
-		char inputBuffer[100];
+		char inputBuffer[1024];
 		printf(">> ");
 		char* success = fgets(inputBuffer, sizeof(inputBuffer), stdin);
 
