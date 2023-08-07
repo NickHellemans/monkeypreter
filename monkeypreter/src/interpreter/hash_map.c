@@ -1,4 +1,6 @@
 #include "hash_map.h"
+
+#include <stdio.h>
 #include <string.h>
 
 uint32_t hash(const char* key)
@@ -71,6 +73,7 @@ bool hashMapContains(struct HashMap* hm, const char* key) {
 struct Object lookupKeyInHashMap(struct HashMap* hm, const char* key) {
 	struct Object obj;
 	obj.type = OBJ_NULL;
+	printf("GETTING `%s` OUT ENV\n", key);
 
 	if (key == NULL || hm == NULL || !hashMapContains(hm, key)) return obj;
 

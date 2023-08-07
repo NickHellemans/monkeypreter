@@ -502,13 +502,12 @@ Expression* parseCallExpression(Parser* parser, Expression* left) {
 struct ExpressionList parseExpressionList(Parser* parser, TokenType end) {
 	struct ExpressionList params = { NULL, 0, 1};
 
-	if (peekTokenIs(parser, TokenTypeRParen)) {
+	if (peekTokenIs(parser, end)) {
 		setParserNextToken(parser);
 		return params;
 	}
 
 	setParserNextToken(parser);
-
 	params.values = (Expression**) malloc(params.cap * sizeof(Expression*));
 
 	if (!params.values) {

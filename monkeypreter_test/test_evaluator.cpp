@@ -64,6 +64,42 @@ bool testNullObject(const struct Object obj) {
 	return true;
 }
 
+struct ExpectedArray {
+	size_t expectedArrSize;
+	struct Object expectedObjects[4];
+};
+
+union ExpectedVal {
+	int64_t expectedInt;
+	char expectedString[128];
+	void* ptr;
+	//If array
+	struct ExpectedArray expectedArray;
+};
+
+bool testIntegerArrayObject(const struct Object obj, struct ExpectedArray expected) {
+
+	if(obj.type != OBJ_ARRAY) {
+		printf("Object not a array, got %s", objectTypeToStr(obj.type));
+		return false;
+	}
+
+	struct ObjectList arr = obj.value.arr;
+
+	if(arr.size != expected.expectedArrSize) {
+		printf("wrong array size, expected: %llu, got: %llu\n", expected.expectedArrSize, arr.size);
+		return false;
+	}
+
+	for (size_t i = 0; i < (size_t) arr.size; i++) {
+		if (!testIntegerObject(obj.value.arr.objects[i], expected.expectedObjects[i].value.integer)) {
+			return false;
+		}
+	}
+
+	return true;
+
+}
 TEST(TestEval, TestEval_01_IntegerExpr) {
 	struct TestInteger {
 		char input[32];
@@ -392,31 +428,91 @@ TEST(TestEval, TestEval_11_StringConcat) {
 
 }
 
-enum ExpectedType {EXPECT_INT, EXPECT_STRING, EXPECT_NULL};
+enum ExpectedType {EXPECT_INT, EXPECT_STRING, EXPECT_NULL, EXPECT_ARRAY};
 
 TEST(TestEval, TestEval_12_BuiltinFunctions) {
+
 	struct TestInteger {
 		char input[55];
-		union {
-			int64_t expectedInt;
-			char expectedString[128];
-		};
+		ExpectedVal expected;
 		//0 for int, 1 for string
 		ExpectedType type;
 
 	} tests[]{
+		//len
 		{"len(\"\")", {.expectedInt = 0}, EXPECT_INT},
 		{"len(\"four\")", {.expectedInt = 4}, EXPECT_INT},
 		{"len(\"hello world\")", {.expectedInt = 11}, EXPECT_INT},
 		{"len(1)", {.expectedString = "argument to `len` not supported, got INTEGER"}, EXPECT_STRING},
 		{R"(len("one", "two"))", {.expectedString = "wrong number of arguments. got=2, want=1"}, EXPECT_STRING},
-	};
+		{"len([])", {.expectedInt = 0}, EXPECT_INT},
+		{"len([1,2,3])", {.expectedInt = 3}, EXPECT_INT},
+		{"len([1,2, 3 + 1])", {.expectedInt = 3}, EXPECT_INT},
+		//first
+		{"first([])", {.ptr = nullptr}, EXPECT_NULL},
+		{"first([1])", {.expectedInt = 1}, EXPECT_INT},
+		{"first([2, 3, 1])", {.expectedInt = 2}, EXPECT_INT},
+		{"first([2+2, 3, 1])", {.expectedInt = 4}, EXPECT_INT},
+		{"first(1)", {.expectedString = "argument to `first` must be ARRAY, got INTEGER"}, EXPECT_STRING},
+		{"first([1], [2])", {.expectedString = "wrong number of arguments. got=2, want=1"}, EXPECT_STRING},
+		//last
+		{"last([])", {.ptr = nullptr}, EXPECT_NULL},
+		{"last([1])", {.expectedInt = 1}, EXPECT_INT},
+		{"last([2, 3, 1])", {.expectedInt = 1}, EXPECT_INT},
+		{"last([2+2, 3, 1*10])", {.expectedInt = 10}, EXPECT_INT},
+		{"last(1)", {.expectedString = "argument to `last` must be ARRAY, got INTEGER"}, EXPECT_STRING},
+		{"last([1], [2])", {.expectedString = "wrong number of arguments. got=2, want=1"}, EXPECT_STRING},
+		//cdr
+		{"cdr([])", { .ptr = nullptr }, EXPECT_NULL},
+		{ "cdr([1])", {.expectedArray = {.expectedArrSize = 0, .expectedObjects = {}}}, EXPECT_ARRAY },
+		{ "cdr([2, 3, 1])", {.expectedArray = {.expectedArrSize = 2,
+			.expectedObjects = {
+				{.type = OBJ_INT, .value = {.integer = 3}},
+				{.type = OBJ_INT, .value = {.integer = 1}},
+			}}}, EXPECT_ARRAY },
+		{ "cdr([2+2, 3, 1*10])", {.expectedArray = {.expectedArrSize = 2,
+			.expectedObjects = {
+				{.type = OBJ_INT, .value = {.integer = 3}},
+				{.type = OBJ_INT, .value = {.integer = 10}},
+			}}}, EXPECT_ARRAY },
+		{ "cdr(1)", {.expectedString = "argument to `cdr` must be ARRAY, got INTEGER"}, EXPECT_STRING },
+		{ "cdr([1], [2])", {.expectedString = "wrong number of arguments. got=2, want=1"}, EXPECT_STRING },
+		//push
+		{"push([], 1)", {.expectedArray = {.expectedArrSize = 1,
+			.expectedObjects = {
+				{.type = OBJ_INT, .value = {.integer = 1}},
+			}}}, EXPECT_ARRAY},
+		{"push([1], 3)",  {.expectedArray = {.expectedArrSize = 2,
+			.expectedObjects = {
+				{.type = OBJ_INT, .value = {.integer = 1}},
+				{.type = OBJ_INT, .value = {.integer = 3}},
+			}}}, EXPECT_ARRAY},
+		{"push([2, 3, 1], 5)", {.expectedArray = {.expectedArrSize = 4,
+			.expectedObjects = {
+				{.type = OBJ_INT, .value = {.integer = 2}},
+				{.type = OBJ_INT, .value = {.integer = 3}},
+				{.type = OBJ_INT, .value = {.integer = 1}},
+				{.type = OBJ_INT, .value = {.integer = 5}},
+			}}}, EXPECT_ARRAY},
+		{"push([2+2, 3, 1*10], 20)",  {.expectedArray = {.expectedArrSize = 4,
+			.expectedObjects = {
+				{.type = OBJ_INT, .value = {.integer = 4}},
+				{.type = OBJ_INT, .value = {.integer = 3}},
+				{.type = OBJ_INT, .value = {.integer = 10}},
+				{.type = OBJ_INT, .value = {.integer = 20}},
+			}}}, EXPECT_ARRAY},
+		{"push(1)", {.expectedString = "wrong number of arguments. got=1, want=2"}, EXPECT_STRING},
+		{"push(1, 2)", {.expectedString = "argument to `push` must be ARRAY, got INTEGER"}, EXPECT_STRING},
+			};
 
-	for (int i = 0; i < 5; i++) {
+
+	for (int i = 0; i < 32; i++) {
+		printf("Testing input: %s\n", tests[i].input);
 		struct Object evaluated = testEval(tests[i].input);
+
 		switch (tests[i].type) {
 			case EXPECT_INT:
-				if (!testIntegerObject(evaluated, tests[i].expectedInt)) {
+				if (!testIntegerObject(evaluated, tests[i].expected.expectedInt)) {
 						FAIL();
 					}
 					break;
@@ -427,8 +523,20 @@ TEST(TestEval, TestEval_12_BuiltinFunctions) {
 					FAIL();
 				}
 
-				if(strcmp(evaluated.value.error.msg, tests[i].expectedString) != 0) {
-					printf("Wrong error msg, expected: %s, got: %s\n", tests[i].expectedString, evaluated.value.error.msg);
+				if(strcmp(evaluated.value.error.msg, tests[i].expected.expectedString) != 0) {
+					printf("Wrong error msg, expected: %s, got: %s\n", tests[i].expected.expectedString, evaluated.value.error.msg);
+					FAIL();
+				}
+				break;
+
+			case EXPECT_NULL:
+				if (!testNullObject(evaluated)) {
+					FAIL();
+				}
+				break;
+
+			case EXPECT_ARRAY:
+				if (!testIntegerArrayObject(evaluated, tests[i].expected.expectedArray)) {
 					FAIL();
 				}
 				break;

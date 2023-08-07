@@ -197,6 +197,7 @@ struct Object evalStatement(Statement* stmt, struct ObjectEnvironment* env) {
 			}
 			//Now what? --> Add identifier to env
 			environmentSet(env, stmt->identifier.value, obj);
+			printf("ADDED `%s` TO THE ENV\n", stmt->identifier.value);
 			return obj;
 		}
 	}
@@ -272,10 +273,10 @@ struct Object evalExpression(Expression* expr, struct ObjectEnvironment* env) {
 		case EXPR_ARRAY:
 			obj.type = OBJ_ARRAY;
 			struct ObjectList elements = evalExpressions(expr->array.elements, env);
+
 			if (elements.size == 1 && isError(elements.objects[0])) {
 				return elements.objects[0];
 			}
-
 			obj.value.arr = elements;
 			break;
 
@@ -448,7 +449,6 @@ struct Object evalIdentifier(Expression* expr, struct ObjectEnvironment* env) {
 	}
 
 	obj = getBuiltin(expr->ident.value);
-
 	if(obj.type != OBJ_NULL) {
 		return obj;
 	}
