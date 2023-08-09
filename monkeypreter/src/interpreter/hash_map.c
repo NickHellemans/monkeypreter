@@ -35,7 +35,7 @@ void destroyHashMap(struct HashMap* hm) {
 }
 
 //bool insertIntoHashMap(struct HashMap* hm, const char* key, struct Object data) {
-bool insertIntoHashMap(struct HashMap* hm, const char* key, struct Object* data) {
+bool insertIntoHashMap(struct HashMap* hm, const char* key, void* data) {
 
 	if (key == NULL || hm == NULL || hashMapContains(hm, key)) return false;
 	const uint32_t index = getIndex(hm, key);
@@ -43,7 +43,6 @@ bool insertIntoHashMap(struct HashMap* hm, const char* key, struct Object* data)
 	//Create new node
 	struct HashNode* node = (struct HashNode*)malloc(sizeof * node);
 	strcpy_s(node->key, MAX_KEY_LEN, key);
-	//node->key = key;
 	node->data = data;
 
 	//Insert at head of bucket with hashed index
@@ -73,11 +72,11 @@ bool hashMapContains(struct HashMap* hm, const char* key) {
 
 	return false;
 }
-struct Object* lookupKeyInHashMap(struct HashMap* hm, const char* key) {
+void* lookupKeyInHashMap(struct HashMap* hm, const char* key) {
 
-	struct Object* obj = &NullObj;
+	//struct Object* obj = &NullObj;
 
-	if (key == NULL || hm == NULL || !hashMapContains(hm, key)) return obj;
+	if (key == NULL || hm == NULL || !hashMapContains(hm, key)) return NULL;
 
 	uint32_t index = getIndex(hm, key);
 	struct HashNode* curr = hm->elems[index];
@@ -88,7 +87,7 @@ struct Object* lookupKeyInHashMap(struct HashMap* hm, const char* key) {
 		}
 		curr = curr->next;
 	}
-	return obj;
+	return NULL;
 }
 
 bool deleteKeyFromHashMap(struct HashMap* hm, const char* key) {

@@ -15,10 +15,15 @@ struct ObjectEnvironment* newEnclosedEnvironment(struct ObjectEnvironment* outer
 }
 
 struct Object* environmentGet(struct ObjectEnvironment* env, char* key) {
-	struct Object* obj = lookupKeyInHashMap(env->store, key);
-	if(obj->type == OBJ_NULL && env->outer != NULL) {
+	struct Object* obj = (struct Object*)lookupKeyInHashMap(env->store, key);
+	if(obj == NULL && env->outer != NULL) {
 		obj = environmentGet(env->outer, key);
 	}
+
+	if(obj == NULL) {
+		obj = &NullObj;
+	}
+
 	return obj;
 }
 
