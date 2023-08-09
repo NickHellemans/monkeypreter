@@ -148,12 +148,22 @@ struct BuiltinFunction {
 	struct Object* (*builtin) (struct ObjectList args);
 };
 
+inline struct Object* print(struct ObjectList args) {
+
+	for(size_t i = 0; i < args.size; i++) {
+		printf("%s", inspectObject(args.objects[i]));
+	}
+
+	return &NullObj;
+}
+
 struct BuiltinFunction builtinFunctions[] = {
 	{"len", len},
 	{"first", first},
 	{"last", last},
 	{"cdr", cdr},
 	{"push", push},
+	{"print", print},
 };
 
 struct Object builtinFunctionsObjects[] = {
@@ -162,6 +172,7 @@ struct Object builtinFunctionsObjects[] = {
 	{OBJ_BUILTIN, {.builtin = last}},
 	{OBJ_BUILTIN, {.builtin = cdr}},
 	{OBJ_BUILTIN, {.builtin = push}},
+	{OBJ_BUILTIN, {.builtin = print}},
 };
 
 #define builtinSize (sizeof(builtinFunctions) / sizeof(builtinFunctions[0]))
