@@ -52,11 +52,11 @@ inline void repl(void) {
 			break;
 		}
 
-		struct Object evaluated = evalProgram(program, env);
+		struct Object* evaluated = evalProgram(program, env);
 
 
-		if(evaluated.type != OBJ_NULL && evaluated.type != OBJ_FUNCTION && evaluated.type != OBJ_RETURN) {
-			char* objStr = inspectObject(&evaluated);
+		if(evaluated->type != OBJ_NULL && evaluated->type != OBJ_FUNCTION && evaluated->type != OBJ_RETURN) {
+			char* objStr = inspectObject(evaluated);
 			printf("%s\n\n", objStr);
 			free(objStr);
 		}

@@ -1,8 +1,7 @@
 #include "hash_map.h"
-
-#include <stdio.h>
 #include <string.h>
 
+//String hash
 uint32_t hash(const char* key)
 {
 	uint32_t hash = 0;
@@ -23,6 +22,8 @@ struct HashMap* createHashMap(uint32_t cap) {
 	struct HashMap* hm = (struct HashMap*)malloc(sizeof * hm);
 	hm->size = 0;
 	hm->cap = cap;
+	//hm->keyType = keyType;
+	//hm->dataType = dataType;
 	hm->elems = (struct HashNode**)calloc(cap, sizeof(struct HashNode*));
 	return hm;
 }
@@ -33,7 +34,8 @@ void destroyHashMap(struct HashMap* hm) {
 	free(hm);
 }
 
-bool insertIntoHashMap(struct HashMap* hm, const char* key, struct Object data) {
+//bool insertIntoHashMap(struct HashMap* hm, const char* key, struct Object data) {
+bool insertIntoHashMap(struct HashMap* hm, const char* key, struct Object* data) {
 
 	if (key == NULL || hm == NULL || hashMapContains(hm, key)) return false;
 	const uint32_t index = getIndex(hm, key);
@@ -41,6 +43,7 @@ bool insertIntoHashMap(struct HashMap* hm, const char* key, struct Object data) 
 	//Create new node
 	struct HashNode* node = (struct HashNode*)malloc(sizeof * node);
 	strcpy_s(node->key, MAX_KEY_LEN, key);
+	//node->key = key;
 	node->data = data;
 
 	//Insert at head of bucket with hashed index
@@ -70,9 +73,9 @@ bool hashMapContains(struct HashMap* hm, const char* key) {
 
 	return false;
 }
-struct Object lookupKeyInHashMap(struct HashMap* hm, const char* key) {
-	struct Object obj;
-	obj.type = OBJ_NULL;
+struct Object* lookupKeyInHashMap(struct HashMap* hm, const char* key) {
+
+	struct Object* obj = &NullObj;
 
 	if (key == NULL || hm == NULL || !hashMapContains(hm, key)) return obj;
 

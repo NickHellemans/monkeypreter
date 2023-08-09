@@ -13,26 +13,26 @@ extern "C" {
 	#include "interpreter/hash_map.c"
 }
 
-struct Object testEval(const char* input) {
+struct Object* testEval(const char* input) {
 	Lexer lexer = createLexer(input);
 	Parser parser = createParser(&lexer);
 	Program* program = parseProgram(&parser);
 	struct ObjectEnvironment* env = newEnvironment();
-	const struct Object obj = evalProgram(program, env);
+	struct Object* obj = evalProgram(program, env);
 	//freeProgram(program);
 	freeParser(&parser);
 	deleteEnvironment(env);
 	return obj;
 }
 
-bool testIntegerObject(struct Object obj, int64_t expected) {
+bool testIntegerObject(const struct Object* obj, int64_t expected) {
 
-	if(obj.type != OBJ_INT) {
-		printf("Object is not an integer, expected %s, got %s\n", objectTypeToStr(OBJ_INT), objectTypeToStr(obj.type));
+	if(obj->type != OBJ_INT) {
+		printf("Object is not an integer, expected %s, got %s\n", objectTypeToStr(OBJ_INT), objectTypeToStr(obj->type));
 		return false;
 	}
-	if(obj.value.integer != expected) {
-		printf("Object has wrong value, expected %lld, got %lld\n", expected, obj.value.integer);
+	if(obj->value.integer != expected) {
+		printf("Object has wrong value, expected %lld, got %lld\n", expected, obj->value.integer);
 		return false;
 	}
 
@@ -54,10 +54,10 @@ bool testBooleanObject(const struct Object* obj, const bool expected) {
 	return true;
 }
 
-bool testNullObject(const struct Object obj) {
+bool testNullObject(const struct Object* obj) {
 
-	if(obj.type != OBJ_NULL) {
-		printf("Object not NULL, got %s", objectTypeToStr(obj.type));
+	if(obj->type != OBJ_NULL) {
+		printf("Object not NULL, got %s", objectTypeToStr(obj->type));
 		return false;
 	}
 
@@ -77,14 +77,14 @@ union ExpectedVal {
 	struct ExpectedArray expectedArray;
 };
 
-bool testIntegerArrayObject(const struct Object obj, struct ExpectedArray expected) {
+bool testIntegerArrayObject(const struct Object* obj, struct ExpectedArray expected) {
 
-	if(obj.type != OBJ_ARRAY) {
-		printf("Object not a array, got %s", objectTypeToStr(obj.type));
+	if(obj->type != OBJ_ARRAY) {
+		printf("Object not a array, got %s", objectTypeToStr(obj->type));
 		return false;
 	}
 
-	struct ObjectList arr = obj.value.arr;
+	struct ObjectList arr = obj->value.arr;
 
 	if(arr.size != expected.expectedArrSize) {
 		printf("wrong array size, expected: %llu, got: %llu\n", expected.expectedArrSize, arr.size);
@@ -92,7 +92,7 @@ bool testIntegerArrayObject(const struct Object obj, struct ExpectedArray expect
 	}
 
 	for (size_t i = 0; i < (size_t) arr.size; i++) {
-		if (!testIntegerObject(obj.value.arr.objects[i], expected.expectedObjects[i].value.integer)) {
+		if (!testIntegerObject(obj->value.arr.objects[i], expected.expectedObjects[i].value.integer)) {
 			return false;
 		}
 	}
@@ -123,7 +123,7 @@ TEST(TestEval, TestEval_01_IntegerExpr) {
 	};
 
 	for(int i = 0; i < 15; i++) {
-		const struct Object evaluated = testEval(tests[i].input);
+		const struct Object* evaluated = testEval(tests[i].input);
 		if(!testIntegerObject(evaluated, tests[i].expected)) {
 			FAIL();
 		}
@@ -158,8 +158,8 @@ TEST(TestEval, TestEval_02_BoolExpr) {
 	};
 
 	for (int i = 0; i < 19; i++) {
-		const struct Object evaluated = testEval(tests[i].input);
-		if (!testBooleanObject(&evaluated, tests[i].expected)) {
+		const struct Object* evaluated = testEval(tests[i].input);
+		if (!testBooleanObject(evaluated, tests[i].expected)) {
 			FAIL();
 		}
 	}
@@ -180,8 +180,8 @@ TEST(TestEval, TestEval_03_BangOperator) {
 	};
 
 	for (int i = 0; i < 6; i++) {
-		struct Object evaluated = testEval(tests[i].input);
-		if (!testBooleanObject(&evaluated, tests[i].expected)) {
+		struct Object* evaluated = testEval(tests[i].input);
+		if (!testBooleanObject(evaluated, tests[i].expected)) {
 			FAIL();
 		}
 	}
@@ -203,7 +203,7 @@ TEST(TestEval, TestEval_04_IfElseExpr) {
 	};
 
 	for (int i = 0; i < 7; i++) {
-		struct Object evaluated = testEval(tests[i].input);
+		struct Object* evaluated = testEval(tests[i].input);
 
 		if(tests[i].expected == NULL) {
 			if(!testNullObject(evaluated)) {
@@ -235,7 +235,7 @@ TEST(TestEval, TestEval_05_ReturnStatements) {
 	};
 
 	for (int i = 0; i < 5; i++) {
-		struct Object evaluated = testEval(tests[i].input);
+		struct Object* evaluated = testEval(tests[i].input);
 		if (!testIntegerObject(evaluated, tests[i].expected)) {
 			FAIL();
 		}
@@ -286,14 +286,14 @@ TEST(TestEval, TestEval_06_ErrorHandling) {
 	};
 
 	for (int i = 0; i < 9; i++) {
-		struct Object evaluated = testEval(tests[i].input);
-		if(evaluated.type != OBJ_ERROR) {
-			printf("No error object returned, got %s\n", objectTypeToStr(evaluated.type));
+		struct Object* evaluated = testEval(tests[i].input);
+		if(evaluated->type != OBJ_ERROR) {
+			printf("No error object returned, got %s\n", objectTypeToStr(evaluated->type));
 			FAIL();
 		}
 
-		if(strcmp(evaluated.value.error.msg, tests[i].expected) != 0) {
-			printf("Wrong error message. Expected: %s, got %s\n", tests[i].expected, evaluated.value.error.msg);
+		if(strcmp(evaluated->value.error.msg, tests[i].expected) != 0) {
+			printf("Wrong error message. Expected: %s, got %s\n", tests[i].expected, evaluated->value.error.msg);
 			FAIL();
 		}
 	}
@@ -312,8 +312,8 @@ TEST(TestEval, TestEval_07_LetStatements) {
 
 	for (int i = 0; i < 4; i++) {
 		printf("Start test %d\n",i);
-		struct Object evaluated = testEval(tests[i].input);
-		printf("Here after eval: type = %d, value = %llu\n", evaluated.type, evaluated.value.integer);
+		struct Object* evaluated = testEval(tests[i].input);
+		printf("Here after eval: type = %d, value = %llu\n", evaluated->type, evaluated->value.integer);
 		if (!testIntegerObject(evaluated, tests[i].expected)) {
 			FAIL();
 		}
@@ -324,13 +324,13 @@ TEST(TestEval, TestEval_07_LetStatements) {
 TEST(TestEval, TestEval_08_FunctionObject) {
 
 	char input[] = "fn(x) { x + 2; };";
-	struct Object evaluated = testEval(input);
-	if(evaluated.type != OBJ_FUNCTION) {
-		printf("object is not a function, got %d\n", evaluated.type);
+	struct Object* evaluated = testEval(input);
+	if(evaluated->type != OBJ_FUNCTION) {
+		printf("object is not a function, got %d\n", evaluated->type);
 		FAIL();
 	}
 
-	FunctionObject func = evaluated.value.function;
+	FunctionObject func = evaluated->value.function;
 	if(func.parameters.size != 1) {
 		printf("function has wrong parameters length, expected 1, got %llu\n", func.parameters.size);
 		FAIL();
@@ -369,7 +369,7 @@ TEST(TestEval, TestEval_09_FunctionApplication) {
 	};
 
 	for (int i = 0; i < 6; i++) {
-		struct Object evaluated = testEval(tests[i].input);
+		struct Object* evaluated = testEval(tests[i].input);
 		if (!testIntegerObject(evaluated, tests[i].expected)) {
 			FAIL();
 		}
@@ -385,7 +385,7 @@ TEST(TestEval, TestEval_10_Closures) {
 				     "let addTwo = newAdder(2);"
 				     "addTwo(2);";
 
-	struct Object evaluated = testEval(input);
+	struct Object* evaluated = testEval(input);
 	if (!testIntegerObject(evaluated, 4)) {
 		FAIL();
 	}
@@ -397,14 +397,14 @@ TEST(TestEval, TestEval_10_Strings) {
 	char input[] = "\"Hello World!\"";
 	char expected[] = "Hello World!";
 
-	struct Object evaluated = testEval(input);
-	if(evaluated.type != OBJ_STRING) {
-		printf("Object is not a string, got %s\n", objectTypeToStr(evaluated.type));
+	struct Object* evaluated = testEval(input);
+	if(evaluated->type != OBJ_STRING) {
+		printf("Object is not a string, got %s\n", objectTypeToStr(evaluated->type));
 		FAIL();
 	}
 
-	if(strcmp(evaluated.value.string, expected) != 0) {
-		printf("String has wrong value, expected: %s, got %s\n", expected, evaluated.value.string);
+	if(strcmp(evaluated->value.string, expected) != 0) {
+		printf("String has wrong value, expected: %s, got %s\n", expected, evaluated->value.string);
 		FAIL();
 	}
 
@@ -415,14 +415,14 @@ TEST(TestEval, TestEval_11_StringConcat) {
 	const char input[] = R"("Hello" + " " + "World!")";
 	char expected[] = "Hello World!";
 
-	struct Object evaluated = testEval(input);
-	if (evaluated.type != OBJ_STRING) {
-		printf("Object is not a string, got %s\n", objectTypeToStr(evaluated.type));
+	struct Object* evaluated = testEval(input);
+	if (evaluated->type != OBJ_STRING) {
+		printf("Object is not a string, got %s\n", objectTypeToStr(evaluated->type));
 		FAIL();
 	}
 
-	if (strcmp(evaluated.value.string, expected) != 0) {
-		printf("String has wrong value, expected: %s, got %s\n", expected, evaluated.value.string);
+	if (strcmp(evaluated->value.string, expected) != 0) {
+		printf("String has wrong value, expected: %s, got %s\n", expected, evaluated->value.string);
 		FAIL();
 	}
 
@@ -508,7 +508,7 @@ TEST(TestEval, TestEval_12_BuiltinFunctions) {
 
 	for (int i = 0; i < 32; i++) {
 		printf("Testing input: %s\n", tests[i].input);
-		struct Object evaluated = testEval(tests[i].input);
+		struct Object* evaluated = testEval(tests[i].input);
 
 		switch (tests[i].type) {
 			case EXPECT_INT:
@@ -518,13 +518,13 @@ TEST(TestEval, TestEval_12_BuiltinFunctions) {
 					break;
 
 			case EXPECT_STRING:
-				if(evaluated.type != OBJ_ERROR) {
-					printf("Object is not an error, got %s", objectTypeToStr(evaluated.type));
+				if(evaluated->type != OBJ_ERROR) {
+					printf("Object is not an error, got %s", objectTypeToStr(evaluated->type));
 					FAIL();
 				}
 
-				if(strcmp(evaluated.value.error.msg, tests[i].expected.expectedString) != 0) {
-					printf("Wrong error msg, expected: %s, got: %s\n", tests[i].expected.expectedString, evaluated.value.error.msg);
+				if(strcmp(evaluated->value.error.msg, tests[i].expected.expectedString) != 0) {
+					printf("Wrong error msg, expected: %s, got: %s\n", tests[i].expected.expectedString, evaluated->value.error.msg);
 					FAIL();
 				}
 				break;
@@ -548,27 +548,27 @@ TEST(TestEval, TestEval_13_ArrayLiterals) {
 
 	const char input[] = "[1, 2 * 2, 3 + 3]";
 
-	struct Object evaluated = testEval(input);
-	printf("After eval, type: %s\n", objectTypeToStr(evaluated.type));
-	if (evaluated.type != OBJ_ARRAY) {
-		printf("Object is not an array, got %s\n", objectTypeToStr(evaluated.type));
+	struct Object* evaluated = testEval(input);
+	printf("After eval, type: %s\n", objectTypeToStr(evaluated->type));
+	if (evaluated->type != OBJ_ARRAY) {
+		printf("Object is not an array, got %s\n", objectTypeToStr(evaluated->type));
 		FAIL();
 	}
 
-	if(evaluated.value.arr.size != 3) {
-		printf("array has wrong number of elements. got=%llu", evaluated.value.arr.size);
+	if(evaluated->value.arr.size != 3) {
+		printf("array has wrong number of elements. got=%llu", evaluated->value.arr.size);
 		FAIL();
 	}
 
-	if(!testIntegerObject(evaluated.value.arr.objects[0], 1)) {
+	if(!testIntegerObject(evaluated->value.arr.objects[0], 1)) {
 		FAIL();
 	}
 
-	if (!testIntegerObject(evaluated.value.arr.objects[1], 4)) {
+	if (!testIntegerObject(evaluated->value.arr.objects[1], 4)) {
 		FAIL();
 	}
 
-	if (!testIntegerObject(evaluated.value.arr.objects[2], 6)) {
+	if (!testIntegerObject(evaluated->value.arr.objects[2], 6)) {
 		FAIL();
 	}
 }
@@ -637,9 +637,9 @@ TEST(TestEval, TestEval_14_ArrayIndexExpr) {
 	};
 
 	for (int i = 0; i < 10; i++) {
-		struct Object evaluated = testEval(tests[i].input);
-		printf("After eval: type = %s\n", objectTypeToStr(evaluated.type));
-		printf("%s\n", inspectObject(&evaluated));
+		struct Object* evaluated = testEval(tests[i].input);
+		printf("After eval: type = %s\n", objectTypeToStr(evaluated->type));
+		printf("%s\n", inspectObject(evaluated));
 		switch (tests[i].type) {
 
 		case EXPECT_INT:

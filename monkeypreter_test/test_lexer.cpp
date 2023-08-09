@@ -113,6 +113,7 @@ TEST(TestLexer, TestNextToken_03) {
 		"\"foobar\""
 		"\"foo bar\""
 		"[1, 2];"
+		"{\"foo\": \"bar\"}"
 	;
 
 	Lexer lexer = createLexer(input);
@@ -199,6 +200,12 @@ TEST(TestLexer, TestNextToken_03) {
 		{TokenTypeInt, "2"},
 		{TokenTypeRBracket, "]"},
 		{TokenTypeSemicolon, ";"},
+		{TokenTypeLSquirly, "{"},
+		{TokenTypeString, "foo"},
+		{TokenTypeColon, ":"},
+		{TokenTypeString, "bar"},
+		{TokenTypeRSquirly, "}"},
+
 		{TokenTypeEof, ""},
 	};
 

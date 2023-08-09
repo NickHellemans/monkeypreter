@@ -5,6 +5,7 @@
 #include "environment.h"
 #include "../parser/ast.h"
 
+
 typedef enum ObjectType {
 	OBJ_NULL,
 	OBJ_INT,
@@ -30,7 +31,7 @@ struct FunctionObject {
 struct ObjectList {
 	size_t size;
 	size_t cap;
-	struct Object* objects;
+	struct Object** objects;
 };
 
 union ObjectVal {
@@ -41,7 +42,7 @@ union ObjectVal {
 	struct ErrorObject error;
 	struct FunctionObject function;
 	//Builtin fn pointer that returns object
-	struct Object (*builtin) (struct ObjectList args);
+	struct Object* (*builtin) (struct ObjectList args);
 	//Array
 	struct ObjectList arr;
 };
@@ -51,26 +52,33 @@ struct Object {
 	union ObjectVal value;
 };
 
+extern struct Object NullObj;
+
+extern struct Object TrueObj;
+
+extern struct Object FalseObj;
+
+struct Object* createObject(ObjectType type);
 char* inspectObject(const struct Object* obj);
 const char* objectTypeToStr(const enum ObjectType type);
-struct Object evalProgram(Program* program, struct ObjectEnvironment* env);
-struct Object evalStatement(Statement* stmt, struct ObjectEnvironment* env);
-struct Object evalExpression(Expression* expr, struct ObjectEnvironment* env);
-struct Object evalPrefixExpression(enum OperatorType op, struct Object right);
-struct Object evalBangOperatorExpression(struct Object right);
-struct Object evalMinusPrefixExpression(struct Object right);
-struct Object evalInfixExpression(enum OperatorType op, struct Object left, struct Object right);
-struct Object evalIntegerInfixExpression(enum OperatorType op, struct Object left, struct Object right);
-struct Object evalIfExpression(struct IfExpression expr, struct ObjectEnvironment* env);
-struct Object evalBlockStatement(struct BlockStatement* bs, struct ObjectEnvironment* env);
-struct Object newEvalError(const char* format, ...);
-struct Object evalIdentifier(Expression* expr, struct ObjectEnvironment* env);
+struct Object* evalProgram(Program* program, struct ObjectEnvironment* env);
+struct Object* evalStatement(Statement* stmt, struct ObjectEnvironment* env);
+struct Object* evalExpression(Expression* expr, struct ObjectEnvironment* env);
+struct Object* evalPrefixExpression(enum OperatorType op, struct Object* right);
+struct Object* evalBangOperatorExpression(struct Object* right);
+struct Object* evalMinusPrefixExpression(struct Object* right);
+struct Object* evalInfixExpression(enum OperatorType op, struct Object* left, struct Object* right);
+struct Object* evalIntegerInfixExpression(enum OperatorType op, struct Object* left, struct Object* right);
+struct Object* evalIfExpression(struct IfExpression expr, struct ObjectEnvironment* env);
+struct Object* evalBlockStatement(struct BlockStatement* bs, struct ObjectEnvironment* env);
+struct Object* newEvalError(const char* format, ...);
+struct Object*	 evalIdentifier(Expression* expr, struct ObjectEnvironment* env);
 struct ObjectList evalExpressions(struct ExpressionList expressions, struct ObjectEnvironment* env);
-struct Object applyFunction(struct Object fn, struct ObjectList args);
-struct ObjectEnvironment* extendFunctionEnv(struct Object fn, struct ObjectList args);
-struct Object unwrapReturnValue(struct Object obj);
-struct Object createFunctionObject(Expression* expr, struct ObjectEnvironment* env);
-struct Object evalStringInfixExpression(enum OperatorType op, struct Object left, struct Object right);
+struct Object* applyFunction(struct Object* fn, struct ObjectList args);
+struct ObjectEnvironment* extendFunctionEnv(struct Object* fn, struct ObjectList args);
+struct Object* unwrapReturnValue(struct Object* obj);
+struct Object* createFunctionObject(Expression* expr, struct ObjectEnvironment* env);
+struct Object* evalStringInfixExpression(enum OperatorType op, struct Object* left, struct Object* right);
 
-struct Object evalIndexExpression(struct Object left, struct Object index);
-struct Object evalArrayIndexExpression(struct Object arr, struct Object index);
+struct Object* evalIndexExpression(struct Object* left, struct Object* index);
+struct Object* evalArrayIndexExpression(struct Object* arr, struct Object* index);

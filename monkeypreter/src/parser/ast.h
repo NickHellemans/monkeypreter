@@ -106,6 +106,11 @@ struct IndexExpression {
     struct SExpression* index;
 };
 
+struct HashLiteral {
+    Token token;
+    struct HashMap* pairs;
+};
+
 typedef struct SExpression {
     enum ExpressionType type;
 	Token token;

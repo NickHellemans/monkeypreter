@@ -14,15 +14,15 @@ struct ObjectEnvironment* newEnclosedEnvironment(struct ObjectEnvironment* outer
 	return env;
 }
 
-struct Object environmentGet(struct ObjectEnvironment* env, char* key) {
-	struct Object obj = lookupKeyInHashMap(env->store, key);
-	if(obj.type == OBJ_NULL && env->outer != NULL) {
+struct Object* environmentGet(struct ObjectEnvironment* env, char* key) {
+	struct Object* obj = lookupKeyInHashMap(env->store, key);
+	if(obj->type == OBJ_NULL && env->outer != NULL) {
 		obj = environmentGet(env->outer, key);
 	}
 	return obj;
 }
 
-struct Object environmentSet(struct ObjectEnvironment* env, char* key, struct Object data) {
+struct Object* environmentSet(struct ObjectEnvironment* env, char* key, struct Object* data) {
 	insertIntoHashMap(env->store, key, data);
 	return data;
 }

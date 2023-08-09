@@ -38,6 +38,7 @@ typedef enum
 	TokenTypeString,
 	TokenTypeLBracket,
 	TokenTypeRBracket,
+	TokenTypeColon,
 } TokenType;
 
 typedef struct Token
