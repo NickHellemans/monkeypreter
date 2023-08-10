@@ -7,7 +7,6 @@
 //Internal declarations
 void freeStatements(Statement* stmts, size_t size);
 void freeExpression(Expression* expr);
-void freeBlockStatement(struct BlockStatement* bs);
 void statementToStr(char* str, const Statement* stmt);
 
 

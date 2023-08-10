@@ -84,16 +84,6 @@ inline struct Object* cdr(struct ObjectList args, struct MonkeyGC* gc) {
 	const size_t arrSize = arg->value.arr.size;
 	const size_t arrCap = arg->value.arr.cap;
 
-	//if (arrSize == 1) {
-	//	obj.type = OBJ_ARRAY;
-	//	struct ObjectList copyList;
-	//	copyList.size = 0;
-	//	copyList.cap = arrCap;
-	//	copyList.objects = NULL;
-	//	obj.value.arr = copyList;
-	//	return obj;
-	//}
-
 	if(arrSize > 0) {
 		
 		struct Object* obj = createObject(gc, OBJ_ARRAY);
@@ -135,6 +125,7 @@ inline struct Object* push(struct ObjectList args, struct MonkeyGC* gc) {
 	copyList.cap = copyList.size  + 1 >= arrCap ? arrCap + 1 : arrCap;
 	copyList.objects = (struct Object**)malloc(copyList.cap * sizeof(struct Object*));
 	memcpy(copyList.objects, arr->value.arr.objects, arrSize * sizeof(struct Object*));
+
 	copyList.objects[copyList.size] = objToAdd;
 	copyList.size++;
 

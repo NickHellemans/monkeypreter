@@ -43,8 +43,12 @@ void markMonkeyObject(struct Object* obj) {
 
 	//Mark objects in array
 	if(obj->type == OBJ_ARRAY) {
+		printf("Marking array objects \n");
+		printf("Array mark: %d\n", obj->mark);
 		for (size_t i = 0; i < obj->value.arr.size; i ++) {
+			printf("Marking object (%p) %llu: %s\n", (void*) obj->value.arr.objects[i], i, inspectObject(obj->value.arr.objects[i]));
 			markMonkeyObject(obj->value.arr.objects[i]);
+			printf("Object %llu mark = %d\n", i, obj->value.arr.objects[i]->mark);
 		}
 	}
 }
@@ -85,10 +89,17 @@ size_t sweepMonkeyGc(struct MonkeyGC* gc) {
 		}
 		//Reached: unmark for next mark phase
 		else {
-			(*object)->mark = false;
+			//(*object)->mark = false;
 			object = &(*object)->next;
 		}
 	}
+
+	//unmark for next mark phase
+	while (*object != NULL) {
+		(*object)->mark = false;
+		object = &(*object)->next;
+	}
+	
 	return garbageCounter;
 }
 

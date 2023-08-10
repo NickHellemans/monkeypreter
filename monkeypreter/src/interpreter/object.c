@@ -40,6 +40,37 @@ struct Object* createObject(struct MonkeyGC* gc, ObjectType type) {
 }
 
 void freeObject(struct Object* obj) {
+
+	switch(obj->type) {
+		case OBJ_NULL: 
+		case OBJ_INT: 
+		case OBJ_BOOL:
+		case OBJ_STRING:
+		case OBJ_ERROR: 
+		case OBJ_BUILTIN: 
+			//Nothing to free
+			break;
+
+		case OBJ_RETURN:
+			freeObject(obj->value.retObj);
+			break;
+
+		case OBJ_FUNCTION:
+			free(obj->value.function.parameters.values);
+			freeBlockStatement(obj->value.function.body);
+			deleteEnvironment(obj->value.function.env);
+			break;
+
+		case OBJ_ARRAY:
+			for(size_t i = 0; i < obj->value.arr.size; i++) {
+				if(!obj->value.arr.objects[i]->mark)
+					freeObject(obj->value.arr.objects[i]);
+				
+			}
+			free(obj->value.arr.objects);
+			break;
+	}
+
 	free(obj);
 }
 
@@ -521,6 +552,8 @@ struct Object* applyFunction(struct Object* fn, struct ObjectList args, struct M
 	if(fn->type == OBJ_FUNCTION) {
 		struct ObjectEnvironment* extendedEnv = extendFunctionEnv(fn, args);
 		struct Object* evaluated = evalBlockStatement(fn->value.function.body, extendedEnv);
+		printf("Evaluated after apply func: %s\n", inspectObject(evaluated));
+		//deleteEnvironment(extendedEnv);
 		//Unwrap return value to stop it from bubbling up to outer functions and stopping execution in all functions
 		return unwrapReturnValue(evaluated);
 	}
