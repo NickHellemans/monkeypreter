@@ -614,10 +614,12 @@ bool peekTokenIs(Parser* parser, TokenType tokenType) {
 
 void freeParser(Parser* parser) {
 
-	if(parser->errorsLen != 0) {
-		for(size_t i = 0; i < parser->errorsLen; i++) {
-			free(parser->errors[i]);
-		}
+	if (parser->errorsLen <= 0)
+		return;
+	
+	for(size_t i = 0; i < parser->errorsLen; i++) {
+		free(parser->errors[i]);
 	}
+	
 	free(parser->errors);
 }

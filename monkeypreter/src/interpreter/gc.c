@@ -17,6 +17,9 @@ struct MonkeyGC* createMonkeyGC(void) {
 
 void deleteMonkeyGC(struct MonkeyGC* gc) {
 
+	if (gc->size <= 0)
+		return;
+
 	struct Object* curr = gc->head;
 	while(curr != NULL) {
 		struct Object* trash = curr;

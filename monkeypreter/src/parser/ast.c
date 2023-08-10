@@ -59,11 +59,26 @@ void freeExpression(Expression* expr) {
 			freeExpression(expr->call.function);
 			break;
 
+		case EXPR_ARRAY: 
+			for (size_t i = 0; i < expr->array.elements.size; i++) {
+				freeExpression(expr->array.elements.values[i]);
+			}
+			free(expr->array.elements.values);
+			break;
+
+		case EXPR_INDEX: 
+			freeExpression(expr->indexExpr.left);
+			freeExpression(expr->indexExpr.index);
+			break;
+
 		case EXPR_INT:
 		case EXPR_IDENT: 
 		case EXPR_BOOL: 
+		case EXPR_STRING: break;
 			//Nothing to free for these expressions
 			break;
+
+		default: ;
 	}
 	
 	free(expr);
