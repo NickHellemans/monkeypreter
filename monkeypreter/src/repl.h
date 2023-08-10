@@ -67,9 +67,10 @@ inline void repl(void) {
 		
 
 		//Clean up memory
-		//freeProgram(program);
+		freeProgram(program);
 		freeParser(&parser);
-		
 	}
+
 	deleteAllEnvironment(env);
+	deleteMonkeyGC(gc);
 }

@@ -44,9 +44,11 @@ void freeExpression(Expression* expr) {
 			freeBlockStatement(expr->ifelse.alternative);
 			break;
 
-		case EXPR_FUNCTION: 
-			free(expr->function.parameters.values);
-			freeBlockStatement(expr->function.body);
+		case EXPR_FUNCTION:
+			//Hand over ownership to object
+			//GC will handle
+			//free(expr->function.parameters.values);
+			//freeBlockStatement(expr->function.body);
 			break;
 
 		case EXPR_CALL: 

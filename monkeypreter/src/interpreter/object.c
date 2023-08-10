@@ -40,7 +40,6 @@ struct Object* createObject(struct MonkeyGC* gc, ObjectType type) {
 }
 
 void freeObject(struct Object* obj) {
-	printf("Free object of type: %s\n", objectTypeToStr(obj->type));
 	switch(obj->type) {
 		case OBJ_NULL: 
 		case OBJ_INT: 
@@ -59,7 +58,7 @@ void freeObject(struct Object* obj) {
 		case OBJ_FUNCTION:
 			free(obj->value.function.parameters.values);
 			freeBlockStatement(obj->value.function.body);
-			//deleteEnvironment(obj->value.function.env);
+			//Do not delete env
 			break;
 
 		case OBJ_ARRAY:

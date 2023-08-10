@@ -2,6 +2,10 @@
 #include <stdio.h>
 #include "hash_map.h"
 
+//Enable - Disable GC logging
+//#define LOG_GC 
+
+
 struct MonkeyGC* createMonkeyGC(void) {
 	struct MonkeyGC* gc = (struct MonkeyGC*) malloc(sizeof * gc);
 	gc->head = NULL;
@@ -12,6 +16,14 @@ struct MonkeyGC* createMonkeyGC(void) {
 }
 
 void deleteMonkeyGC(struct MonkeyGC* gc) {
+
+	struct Object* curr = gc->head;
+	while(curr != NULL) {
+		struct Object* trash = curr;
+		curr = curr->next;
+		freeObject(trash);
+	}
+
 	free(gc);
 }
 
@@ -22,10 +34,12 @@ void addToMonkeyGC(struct MonkeyGC* monkeyGC, struct Object* obj) {
 	monkeyGC->head = obj;
 	monkeyGC->size++;
 
+#ifdef LOG_GC
 	printf("ADDED OBJECT TO GC: \n");
 	printf("\t - Type: %s\n", objectTypeToStr(obj->type));
-	//printf("\t - Value: %s\n", inspectObject(obj));
 	printf("Current GC size = %llu\n", monkeyGC->size);
+#endif
+
 }
 
 void markMonkeyObject(struct Object* obj) {
@@ -36,7 +50,9 @@ void markMonkeyObject(struct Object* obj) {
 
 	obj->mark = true;
 
+#ifdef LOG_GC
 	printf("Marking object of type: %s\n", objectTypeToStr(obj->type));
+#endif
 	//Mark return object
 	if(obj->type == OBJ_RETURN) {
 		markMonkeyObject(obj->value.retObj);
@@ -54,7 +70,6 @@ void markMonkeyObject(struct Object* obj) {
 	if(obj->type == OBJ_FUNCTION) {
 		markMonkeyObjectEnvironment(obj->value.function.env);
 		if(obj->value.function.env->outer) {
-			printf("MARK OUTER ENV\n");
 			markMonkeyObjectEnvironment(obj->value.function.env->outer);
 		}
 	}
@@ -85,10 +100,13 @@ size_t sweepMonkeyGc(struct MonkeyGC* gc) {
 		if (!(*object)->mark) {
 			struct Object* trash = *object;
 			*object = trash->next;
+
+#ifdef LOG_GC
 			printf("Collect garbage: \n");
 			printf("\t - Type: %s\n", objectTypeToStr(trash->type));
 			printf("\t - Value: %s\n", inspectObject(trash));
 			printf("Current GC size = %llu\n", gc->size);
+#endif
 			freeObject(trash);
 			gc->size--;
 			garbageCounter++;
@@ -96,11 +114,15 @@ size_t sweepMonkeyGc(struct MonkeyGC* gc) {
 		}
 		//Reached: unmark for next mark phase
 		else {
+#ifdef LOG_GC
+			printf("Reached objects: %s\n", objectTypeToStr((* object)->type));
+#endif
 			//(*object)->mark = false;
 			object = &(*object)->next;
 		}
 	}
 
+	object = &gc->head;
 	//unmark for next mark phase
 	while (*object != NULL) {
 		(*object)->mark = false;
@@ -112,11 +134,14 @@ size_t sweepMonkeyGc(struct MonkeyGC* gc) {
 
 size_t collectMonkeyGarbage(struct MonkeyGC* gc, struct ObjectEnvironment* env) {
 	markMonkeyObjectEnvironment(env);
+#ifdef LOG_GC
 	printf("MONKEY SWEEP: \n");
+#endif
 	const size_t garbageCount = sweepMonkeyGc(gc);
-
+#ifdef LOG_GC
 	printf("Collecting DONE: \n");
 	printf("\t - Collected %llu garbage objects \n", garbageCount);
 	printf("\t - Current GC size = %llu\n", gc->size);
+#endif
 	return garbageCount;
 }

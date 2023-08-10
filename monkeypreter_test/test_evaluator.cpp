@@ -22,9 +22,10 @@ struct Object* testEval(const char* input) {
 	struct MonkeyGC gc = { NULL, 0 , 1 };
 	struct ObjectEnvironment* env = newEnvironment(&gc);
 	struct Object* obj = evalProgram(program, env);
-	//freeProgram(program);
+	freeProgram(program);
 	freeParser(&parser);
 	deleteEnvironment(env);
+	//deleteMonkeyGC(&gc);
 	return obj;
 }
 
