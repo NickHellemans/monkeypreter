@@ -51,7 +51,7 @@ inline void repl(void) {
 		}
 
 		if (strncmp(inputBuffer, "exit", 4) == 0) {
-			printf("Exiting REPL...");
+			printf("Done with monkey business...\nExiting REPL...\n");
 			break;
 		}
 
@@ -71,6 +71,6 @@ inline void repl(void) {
 		freeParser(&parser);
 	}
 
-	deleteAllEnvironment(env);
+	deleteEnvironment(env);
 	deleteMonkeyGC(gc);
 }

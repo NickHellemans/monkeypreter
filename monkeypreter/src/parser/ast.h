@@ -14,9 +14,6 @@ enum ExpressionType {
     EXPR_STRING,
     EXPR_ARRAY,
     EXPR_INDEX,
-    EXPR_FOR,
-    EXPR_WHILE,
-    EXPR_ASSIGN,
 };
 
 enum StatementType {

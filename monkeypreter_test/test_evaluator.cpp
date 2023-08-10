@@ -19,13 +19,14 @@ struct Object* testEval(const char* input) {
 	Lexer lexer = createLexer(input);
 	Parser parser = createParser(&lexer);
 	Program* program = parseProgram(&parser);
-	struct MonkeyGC gc = { NULL, 0 , 1 };
-	struct ObjectEnvironment* env = newEnvironment(&gc);
+	struct MonkeyGC* gc = createMonkeyGC();
+	struct ObjectEnvironment* env = newEnvironment(gc);
 	struct Object* obj = evalProgram(program, env);
 	freeProgram(program);
 	freeParser(&parser);
 	deleteEnvironment(env);
-	//deleteMonkeyGC(&gc);
+	//Can't delete GC --> Deletes all objects including last object + object might depend on other objects (array)
+	//deleteMonkeyGC(gc);
 	return obj;
 }
 

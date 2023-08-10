@@ -555,8 +555,8 @@ struct Object* applyFunction(struct Object* fn, struct ObjectList args, struct M
 	if(fn->type == OBJ_FUNCTION) {
 		struct ObjectEnvironment* extendedEnv = extendFunctionEnv(fn, args);
 		struct Object* evaluated = evalBlockStatement(fn->value.function.body, extendedEnv);
-		printf("Evaluated after apply func: %s\n", objectTypeToStr(evaluated->type));
-		printf("Evaluated after apply func: %s\n", inspectObject(evaluated));
+		//printf("Evaluated after apply func: %s\n", objectTypeToStr(evaluated->type));
+		//printf("Evaluated after apply func: %s\n", inspectObject(evaluated));
 		//deleteEnvironment(extendedEnv);
 		//Unwrap return value to stop it from bubbling up to outer functions and stopping execution in all functions
 		return unwrapReturnValue(evaluated);

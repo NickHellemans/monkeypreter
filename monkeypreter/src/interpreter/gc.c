@@ -10,23 +10,26 @@ struct MonkeyGC* createMonkeyGC(void) {
 	struct MonkeyGC* gc = (struct MonkeyGC*) malloc(sizeof * gc);
 	gc->head = NULL;
 	gc->size = 0;
-	//Trigger GC after 10 objects
-	gc->maxSize = 1;
+	//Trigger GC after 100 objects
+	gc->maxSize = 100;
 	return gc;
 }
 
 void deleteMonkeyGC(struct MonkeyGC* gc) {
 
+	int counter = 0;
 	if (gc->size <= 0)
 		return;
 
-	struct Object* curr = gc->head;
+	struct Object* curr = gc->head->next;
 	while(curr != NULL) {
 		struct Object* trash = curr;
 		curr = curr->next;
 		freeObject(trash);
+		counter++;
 	}
 
+	printf("Deleted %d objects that were still doing some monkey business\n", counter);
 	free(gc);
 }
 

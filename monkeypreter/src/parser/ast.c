@@ -74,11 +74,10 @@ void freeExpression(Expression* expr) {
 		case EXPR_INT:
 		case EXPR_IDENT: 
 		case EXPR_BOOL: 
-		case EXPR_STRING: break;
+		case EXPR_STRING:
 			//Nothing to free for these expressions
 			break;
 
-		default: ;
 	}
 	
 	free(expr);

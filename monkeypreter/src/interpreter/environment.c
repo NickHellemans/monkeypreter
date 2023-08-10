@@ -32,7 +32,7 @@ struct Object* environmentGet(struct ObjectEnvironment* env, char* key) {
 }
 
 struct Object* environmentSet(struct ObjectEnvironment* env, char* key, struct Object* data) {
-	printf("Added `%s` to env\n", key);
+	//printf("Added `%s` to env\n", key);
 	insertIntoHashMap(env->store, key, data);
 	return data;
 }
