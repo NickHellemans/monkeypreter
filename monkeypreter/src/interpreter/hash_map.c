@@ -87,6 +87,7 @@ void* lookupKeyInHashMap(struct HashMap* hm, const char* key) {
 		}
 		curr = curr->next;
 	}
+
 	return NULL;
 }
 

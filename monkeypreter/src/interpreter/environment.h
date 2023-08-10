@@ -6,7 +6,7 @@ struct ObjectEnvironment {
 	struct MonkeyGC* gc;
 };
 
-struct ObjectEnvironment* newEnvironment(void);
+struct ObjectEnvironment* newEnvironment(struct MonkeyGC* gc);
 struct ObjectEnvironment* newEnclosedEnvironment(struct ObjectEnvironment* outer);
 struct Object* environmentGet(struct ObjectEnvironment* env, char* key);
 struct Object* environmentSet(struct ObjectEnvironment* env, char* key, struct Object* data);

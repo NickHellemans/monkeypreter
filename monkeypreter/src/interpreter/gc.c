@@ -7,7 +7,7 @@ struct MonkeyGC* createMonkeyGC(void) {
 	gc->head = NULL;
 	gc->size = 0;
 	//Trigger GC after 10 objects
-	gc->maxSize = 10;
+	gc->maxSize = 1;
 	return gc;
 }
 
@@ -36,6 +36,7 @@ void markMonkeyObject(struct Object* obj) {
 
 	obj->mark = true;
 
+	printf("Marking object of type: %s\n", objectTypeToStr(obj->type));
 	//Mark return object
 	if(obj->type == OBJ_RETURN) {
 		markMonkeyObject(obj->value.retObj);
@@ -43,12 +44,18 @@ void markMonkeyObject(struct Object* obj) {
 
 	//Mark objects in array
 	if(obj->type == OBJ_ARRAY) {
-		printf("Marking array objects \n");
-		printf("Array mark: %d\n", obj->mark);
+
 		for (size_t i = 0; i < obj->value.arr.size; i ++) {
-			printf("Marking object (%p) %llu: %s\n", (void*) obj->value.arr.objects[i], i, inspectObject(obj->value.arr.objects[i]));
 			markMonkeyObject(obj->value.arr.objects[i]);
-			printf("Object %llu mark = %d\n", i, obj->value.arr.objects[i]->mark);
+		}
+	}
+
+	//Mark objects needed in functions (parameters)
+	if(obj->type == OBJ_FUNCTION) {
+		markMonkeyObjectEnvironment(obj->value.function.env);
+		if(obj->value.function.env->outer) {
+			printf("MARK OUTER ENV\n");
+			markMonkeyObjectEnvironment(obj->value.function.env->outer);
 		}
 	}
 }

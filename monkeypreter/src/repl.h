@@ -30,7 +30,8 @@ inline void printParserErrors(Parser* parser) {
 inline void repl(void) {
 	printf("%s\n", MONKEY_FACE);
 	printf("Type 'exit' to exit REPL\n");
-	struct ObjectEnvironment* env = newEnvironment();
+	struct MonkeyGC* gc = createMonkeyGC();
+	struct ObjectEnvironment* env = newEnvironment(gc);
 
 	while (true) {
 		char inputBuffer[1024];

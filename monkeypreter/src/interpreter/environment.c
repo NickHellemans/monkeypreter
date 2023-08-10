@@ -1,18 +1,19 @@
 #include "environment.h"
+
+#include <stdio.h>
+
 #include "hash_map.h"
 
-struct ObjectEnvironment* newEnvironment(void) {
+struct ObjectEnvironment* newEnvironment(struct MonkeyGC* gc) {
 	struct ObjectEnvironment* env = (struct ObjectEnvironment*)malloc(sizeof * env);
 	env->store = createHashMap(17);
 	env->outer = NULL;
-	env->gc = createMonkeyGC();
+	env->gc = gc;
 	return env;
 }
 
 struct ObjectEnvironment* newEnclosedEnvironment(struct ObjectEnvironment* outer) {
-	struct ObjectEnvironment* env = newEnvironment();
-	free(env->gc);
-	env->gc = outer->gc;
+	struct ObjectEnvironment* env = newEnvironment(outer->gc);
 	env->outer = outer;
 	return env;
 }
@@ -31,6 +32,7 @@ struct Object* environmentGet(struct ObjectEnvironment* env, char* key) {
 }
 
 struct Object* environmentSet(struct ObjectEnvironment* env, char* key, struct Object* data) {
+	printf("Added `%s` to env\n", key);
 	insertIntoHashMap(env->store, key, data);
 	return data;
 }
