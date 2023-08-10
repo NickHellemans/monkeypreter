@@ -3,6 +3,7 @@
 struct ObjectEnvironment {
 	struct HashMap* store;
 	struct ObjectEnvironment* outer;
+	struct MonkeyGC* gc;
 };
 
 struct ObjectEnvironment* newEnvironment(void);

@@ -31,6 +31,7 @@ inline void repl(void) {
 	printf("%s\n", MONKEY_FACE);
 	printf("Type 'exit' to exit REPL\n");
 	struct ObjectEnvironment* env = newEnvironment();
+
 	while (true) {
 		char inputBuffer[1024];
 		printf(">> ");
@@ -42,6 +43,7 @@ inline void repl(void) {
 		Lexer lexer = createLexer(inputBuffer);
 		Parser parser = createParser(&lexer);
 		Program* program = parseProgram(&parser);
+
 		if(parser.errorsLen != 0) {
 			printParserErrors(&parser);
 			continue;
@@ -51,6 +53,7 @@ inline void repl(void) {
 			printf("Exiting REPL...");
 			break;
 		}
+
 
 		struct Object* evaluated = evalProgram(program, env);
 

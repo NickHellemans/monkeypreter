@@ -131,6 +131,7 @@
   <ItemGroup>
     <ClCompile Include="monkeypreter.c" />
     <ClCompile Include="src\interpreter\environment.c" />
+    <ClCompile Include="src\interpreter\gc.c" />
     <ClCompile Include="src\interpreter\hash_map.c" />
     <ClCompile Include="src\interpreter\object.c" />
     <ClCompile Include="src\lexer\lexer.c" />
@@ -141,6 +142,7 @@
   <ItemGroup>
     <ClInclude Include="src\interpreter\builtins.h" />
     <ClInclude Include="src\interpreter\environment.h" />
+    <ClInclude Include="src\interpreter\gc.h" />
     <ClInclude Include="src\interpreter\hash_map.h" />
     <ClInclude Include="src\interpreter\object.h" />
     <ClInclude Include="src\lexer\lexer.h" />

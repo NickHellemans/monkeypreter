@@ -5,11 +5,14 @@ struct ObjectEnvironment* newEnvironment(void) {
 	struct ObjectEnvironment* env = (struct ObjectEnvironment*)malloc(sizeof * env);
 	env->store = createHashMap(17);
 	env->outer = NULL;
+	env->gc = createMonkeyGC();
 	return env;
 }
 
 struct ObjectEnvironment* newEnclosedEnvironment(struct ObjectEnvironment* outer) {
 	struct ObjectEnvironment* env = newEnvironment();
+	free(env->gc);
+	env->gc = outer->gc;
 	env->outer = outer;
 	return env;
 }

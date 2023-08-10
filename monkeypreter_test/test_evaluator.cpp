@@ -11,6 +11,8 @@ extern "C" {
 	#include "interpreter/environment.c"
 	#include "interpreter/hash_map.h"
 	#include "interpreter/hash_map.c"
+	#include "interpreter/gc.h"
+	#include "interpreter/gc.c"
 }
 
 struct Object* testEval(const char* input) {
@@ -123,10 +125,15 @@ TEST(TestEval, TestEval_01_IntegerExpr) {
 	};
 
 	for(int i = 0; i < 15; i++) {
+		printf("Starting test %d\n", i);
+		printf("\t - Input = %s\n", tests[i].input);
+		printf("\t - Expected = %lld\n", tests[i].expected);
 		const struct Object* evaluated = testEval(tests[i].input);
 		if(!testIntegerObject(evaluated, tests[i].expected)) {
 			FAIL();
 		}
+		printf("Ending test %d\n", i);
+		printf("\n");
 	}
 
 }

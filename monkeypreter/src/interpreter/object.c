@@ -27,10 +27,20 @@ struct Object* nativeBoolToBoolObj(bool input) {
 		return &FalseObj;
 }
 
-struct Object* createObject(ObjectType type) {
+struct Object* createObject(struct MonkeyGC* gc, ObjectType type) {
 	struct Object* obj = (struct Object*)malloc(sizeof *obj);
 	obj->type = type;
+	obj->mark = false;
+	obj->next = NULL;
+
+	//Add to GC
+	addToMonkeyGC(gc, obj);
+
 	return obj;
+}
+
+void freeObject(struct Object* obj) {
+	free(obj);
 }
 
 bool isTruthy(struct Object* obj) {
@@ -160,6 +170,11 @@ struct Object* evalProgram(Program* program, struct ObjectEnvironment* env) {
 	struct Object* obj = &NullObj;
 	for (size_t i = 0; i < program->size; i++) {
 		obj = evalStatement(&program->statements[i], env);
+		//Mark intermediate result
+		markMonkeyObject(obj);
+		if (env->gc->size >= env->gc->maxSize)
+			collectMonkeyGarbage(env->gc, env);
+
 		if (obj->type == OBJ_RETURN) {
 			//obj.type = obj.value.retObj->type;
 			//struct Object* trash = obj.value.retObj;
@@ -167,6 +182,8 @@ struct Object* evalProgram(Program* program, struct ObjectEnvironment* env) {
 			//free(trash);
 			return unwrapReturnValue(obj);
 		}
+
+
 
 		if(isError(obj)) {
 			return obj;
@@ -189,7 +206,7 @@ struct Object* evalStatement(Statement* stmt, struct ObjectEnvironment* env) {
 			if(isError(obj)) {
 				return obj;
 			}
-			struct Object* retObj = createObject(obj->type);
+			struct Object* retObj = createObject(env->gc, obj->type);
 			retObj->value = obj->value;
 			obj->type = OBJ_RETURN;
 			obj->value.retObj = retObj;
@@ -215,7 +232,7 @@ struct Object* evalExpression(Expression* expr, struct ObjectEnvironment* env) {
 
 	switch (expr->type) {
 	case EXPR_INT:
-		obj = createObject(OBJ_INT);
+		obj = createObject(env->gc, OBJ_INT);
 		obj->value.integer = expr->integer;
 		break;
 
@@ -228,7 +245,7 @@ struct Object* evalExpression(Expression* expr, struct ObjectEnvironment* env) {
 		if (isError(prefixRight)) {
 			return prefixRight;
 		}
-		return evalPrefixExpression(expr->prefix.operatorType, prefixRight);
+		return evalPrefixExpression(expr->prefix.operatorType, prefixRight, env->gc);
 	}
 
 	case EXPR_INFIX: {
@@ -242,7 +259,7 @@ struct Object* evalExpression(Expression* expr, struct ObjectEnvironment* env) {
 		if (isError(infixLeft)) {
 			return infixLeft;
 		}
-		return evalInfixExpression(expr->infix.operatorType, infixLeft, infixRight);
+		return evalInfixExpression(expr->infix.operatorType, infixLeft, infixRight, env->gc);
 	}
 
 		case EXPR_IF:
@@ -252,7 +269,7 @@ struct Object* evalExpression(Expression* expr, struct ObjectEnvironment* env) {
 			return evalIdentifier(expr, env);
 
 		case EXPR_FUNCTION: {
-			struct Object* func = createObject(OBJ_FUNCTION);
+			struct Object* func = createObject(env->gc, OBJ_FUNCTION);
 			func->value.function.parameters = expr->function.parameters;
 			func->value.function.body = expr->function.body;
 			func->value.function.env = env;
@@ -273,16 +290,16 @@ struct Object* evalExpression(Expression* expr, struct ObjectEnvironment* env) {
 			}
 
 			//Apply function with evaluated args
-			return applyFunction(calledFunc, args);
+			return applyFunction(calledFunc, args, env->gc);
 		}
 
 		case EXPR_STRING:
-			obj = createObject(OBJ_STRING);
+			obj = createObject(env->gc, OBJ_STRING);
 			strcpy_s(obj->value.string, MAX_IDENT_LENGTH, expr->string);
 			break;
 
 		case EXPR_ARRAY:
-			obj = createObject(OBJ_ARRAY);
+			obj = createObject(env->gc, OBJ_ARRAY);
 			struct ObjectList elements = evalExpressions(expr->array.elements, env);
 
 			if (elements.size == 1 && isError(elements.objects[0])) {
@@ -302,21 +319,21 @@ struct Object* evalExpression(Expression* expr, struct ObjectEnvironment* env) {
 				return index;
 			}
 
-			return evalIndexExpression(indexLeft, index);
+			return evalIndexExpression(indexLeft, index, env->gc);
 	}
 
 	return obj;
 }
 
-struct Object* evalPrefixExpression(enum OperatorType op, struct Object* right) {
+struct Object* evalPrefixExpression(enum OperatorType op, struct Object* right, struct MonkeyGC* gc) {
 
 	switch (op) {
 	case OP_NEGATE:
 		return evalBangOperatorExpression(right);
 	case OP_SUBTRACT:
-		return evalMinusPrefixExpression(right);
+		return evalMinusPrefixExpression(right, gc);
 	default:
-		return newEvalError("unknown operator: %s%s", operatorToStr(op), objectTypeToStr(right->type));
+		return newEvalError(gc,"unknown operator: %s%s", operatorToStr(op), objectTypeToStr(right->type));
 	}
 }
 
@@ -334,24 +351,24 @@ struct Object* evalBangOperatorExpression(struct Object* right) {
 	}
 }
 
-struct Object* evalMinusPrefixExpression(struct Object* right) {
+struct Object* evalMinusPrefixExpression(struct Object* right, struct MonkeyGC* gc) {
 	if (right->type != OBJ_INT) {
-		return newEvalError("unknown operator: -%s", objectTypeToStr(right->type));
+		return newEvalError(gc, "unknown operator: -%s", objectTypeToStr(right->type));
 	}
 
-	struct Object* obj = createObject(OBJ_INT);
+	struct Object* obj = createObject(gc, OBJ_INT);
 	obj->value.integer = -right->value.integer;
 	return obj;
 }
 
-struct Object* evalInfixExpression(enum OperatorType op, struct Object* left, struct Object* right) {
+struct Object* evalInfixExpression(enum OperatorType op, struct Object* left, struct Object* right, struct MonkeyGC* gc) {
 
 	if (left->type != right->type) {
-		return newEvalError("type mismatch: %s %s %s", objectTypeToStr(left->type), operatorToStr(op), objectTypeToStr(right->type));
+		return newEvalError(gc, "type mismatch: %s %s %s", objectTypeToStr(left->type), operatorToStr(op), objectTypeToStr(right->type));
 	}
 
 	if (left->type == OBJ_INT && right->type == OBJ_INT) {
-		return evalIntegerInfixExpression(op, left, right);
+		return evalIntegerInfixExpression(op, left, right, gc);
 	}
 
 	if (op == OP_EQ && left->type == OBJ_BOOL && right->type == OBJ_BOOL) {
@@ -363,15 +380,15 @@ struct Object* evalInfixExpression(enum OperatorType op, struct Object* left, st
 	}
 
 	if(left->type == OBJ_STRING && right->type == OBJ_STRING) {
-		return evalStringInfixExpression(op, left, right);
+		return evalStringInfixExpression(op, left, right, gc);
 	}
 
-	return newEvalError("unknown operator: %s %s %s", objectTypeToStr(left->type), operatorToStr(op), objectTypeToStr(right->type));
+	return newEvalError(gc, "unknown operator: %s %s %s", objectTypeToStr(left->type), operatorToStr(op), objectTypeToStr(right->type));
 
 }
 
-struct Object* evalIntegerInfixExpression(enum OperatorType op, struct Object* left, struct Object* right) {
-	struct Object* obj = createObject(OBJ_INT);
+struct Object* evalIntegerInfixExpression(enum OperatorType op, struct Object* left, struct Object* right, struct MonkeyGC* gc) {
+	struct Object* obj = createObject(gc, OBJ_INT);
 
 	const int64_t leftVal = left->value.integer;
 	const int64_t rightVal = right->value.integer;
@@ -406,7 +423,7 @@ struct Object* evalIntegerInfixExpression(enum OperatorType op, struct Object* l
 		return nativeBoolToBoolObj(leftVal != rightVal);
 
 	default:
-		return newEvalError("unknown operator: %s %s %s", objectTypeToStr(left->type), operatorToStr(op), objectTypeToStr(right->type));
+		return newEvalError(gc, "unknown operator: %s %s %s", objectTypeToStr(left->type), operatorToStr(op), objectTypeToStr(right->type));
 	}
 
 	return obj;
@@ -443,8 +460,8 @@ struct Object* evalBlockStatement(struct BlockStatement* bs, struct ObjectEnviro
 	return obj;
 }
 
-struct Object* newEvalError(const char* format, ...) {
-	struct Object* errorObj = createObject(OBJ_ERROR);
+struct Object* newEvalError(struct MonkeyGC* gc, const char* format, ...) {
+	struct Object* errorObj = createObject(gc, OBJ_ERROR);
 
 	va_list argptr;
 	va_start(argptr, format);
@@ -465,7 +482,7 @@ struct Object* evalIdentifier(Expression* expr, struct ObjectEnvironment* env) {
 		return obj;
 	}
 
-	return newEvalError("identifier not found: %s", expr->ident.value);
+	return newEvalError(env->gc, "identifier not found: %s", expr->ident.value);
 }
 
 struct ObjectList evalExpressions(struct ExpressionList expressions, struct ObjectEnvironment* env) {
@@ -499,7 +516,7 @@ struct ObjectList evalExpressions(struct ExpressionList expressions, struct Obje
 	return args;
 }
 
-struct Object* applyFunction(struct Object* fn, struct ObjectList args) {
+struct Object* applyFunction(struct Object* fn, struct ObjectList args, struct MonkeyGC* gc) {
 
 	if(fn->type == OBJ_FUNCTION) {
 		struct ObjectEnvironment* extendedEnv = extendFunctionEnv(fn, args);
@@ -509,10 +526,10 @@ struct Object* applyFunction(struct Object* fn, struct ObjectList args) {
 	}
 
 	if(fn->type == OBJ_BUILTIN) {
-		return fn->value.builtin(args);
+		return fn->value.builtin(args, gc);
 	}
 
-	return newEvalError("not a function: %s", objectTypeToStr(fn->type));
+	return newEvalError(gc, "not a function: %s", objectTypeToStr(fn->type));
 }
 
 struct ObjectEnvironment* extendFunctionEnv(struct Object* fn, struct ObjectList args) {
@@ -538,47 +555,13 @@ struct Object* unwrapReturnValue(struct Object* obj) {
 	return obj;
 }
 
-//struct Object* createFunctionObject(Expression* expr, struct ObjectEnvironment* env) {
-//	struct Object* func = createObject(OBJ_FUNCTION);
-//
-//	//Copy over parameter data
-//	struct IdentifierList params;
-//	params.size = expr->function.parameters.size;
-//	params.cap = expr->function.parameters.cap;
-//	params.values = (Identifier*)malloc(expr->function.parameters.cap * sizeof *params.values);
-//
-//	for(size_t i = 0; i < expr->function.parameters.cap; i++) {
-//		memcpy(&params.values[i], &expr->function.parameters.values[i], sizeof(Identifier));
-//	}
-//
-//	func->value.function.parameters = params;
-//
-//	//Copy over function body data
-//	struct BlockStatement* body = (struct BlockStatement*)malloc(sizeof * body);
-//	body->token = expr->function.body->token;
-//	body->size = expr->function.body->size;
-//	body->cap = expr->function.body->cap;
-//
-//	body->statements = (Statement*)malloc(body->cap * sizeof *body->statements);
-//
-//	for (size_t i = 0; i < expr->function.parameters.cap; i++) {
-//		memcpy(&body->statements[i], &expr->function.body->statements[i], sizeof(Statement));
-//	}
-//
-//	func.value.function.body = body;
-//
-//	//Copy over env pointer
-//	func.value.function.env = env;
-//	return func;
-//}
-
-struct Object* evalStringInfixExpression(enum OperatorType op, struct Object* left, struct Object* right) {
+struct Object* evalStringInfixExpression(enum OperatorType op, struct Object* left, struct Object* right, struct MonkeyGC* gc) {
 
 	if(op != OP_ADD) {
-		return newEvalError("unknown operator: %s %s %s", objectTypeToStr(left->type), operatorToStr(op), objectTypeToStr(right->type));
+		return newEvalError(gc, "unknown operator: %s %s %s", objectTypeToStr(left->type), operatorToStr(op), objectTypeToStr(right->type));
 	}
 
-	struct Object* obj = createObject(OBJ_STRING);
+	struct Object* obj = createObject(gc, OBJ_STRING);
 
 	strcpy_s(obj->value.string, MAX_IDENT_LENGTH, left->value.string);
 	strcat_s(obj->value.string, MAX_IDENT_LENGTH, right->value.string);
@@ -586,12 +569,12 @@ struct Object* evalStringInfixExpression(enum OperatorType op, struct Object* le
 	return obj;	
 }
 
-struct Object* evalIndexExpression(struct Object* left, struct Object* index) {
+struct Object* evalIndexExpression(struct Object* left, struct Object* index, struct MonkeyGC* gc) {
 	if(left->type == OBJ_ARRAY && index->type == OBJ_INT) {
 		return evalArrayIndexExpression(left, index);
 	}
 
-	return newEvalError("index operator not supported: %s", objectTypeToStr(left->type));
+	return newEvalError(gc, "index operator not supported: %s", objectTypeToStr(left->type));
 }
 
 struct Object* evalArrayIndexExpression(struct Object* arr, struct Object* index) {
