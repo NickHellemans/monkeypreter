@@ -135,6 +135,7 @@
     <ClCompile Include="src\interpreter\hash_map.c" />
     <ClCompile Include="src\interpreter\object.c" />
     <ClCompile Include="src\lexer\lexer.c" />
+    <ClCompile Include="src\lexer\token.c" />
     <ClCompile Include="src\parser\ast.c" />
     <ClCompile Include="src\parser\parser.c" />
     <ClCompile Include="src\parser\parser.h" />
@@ -146,8 +147,10 @@
     <ClInclude Include="src\interpreter\hash_map.h" />
     <ClInclude Include="src\interpreter\object.h" />
     <ClInclude Include="src\lexer\lexer.h" />
+    <ClInclude Include="src\lexer\token.h" />
     <ClInclude Include="src\parser\ast.h" />
     <ClInclude Include="src\repl.h" />
+    <ClInclude Include="src\util.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

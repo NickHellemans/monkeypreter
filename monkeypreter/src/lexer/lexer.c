@@ -1,5 +1,4 @@
 #include "lexer.h"
-
 #include <ctype.h>
 #include <string.h>
 
@@ -8,18 +7,6 @@ Lexer createLexer(const char* input)
 	Lexer l = { input, strlen(input),-1, 0, input[0] };
 	readChar(&l);
 	return l;
-}
-
-const char* tokenTypeToStr(TokenType type) {
-	static const char* tokenNames[] = {
-		"ILLEGAL", "EOF", "IDENT", "INT", "FUNCTION", "LET", "TRUE",
-		"FALSE",   "IF",  "ELSE", "RETURN",	"=",  "+",   
-		"-", "!", "*",  "/",
-		"<",  ">",    "==",   "!=", ",",
-		";", "(", ")",  "{", "}", "STRING", "[", "]", ":",
-		
-	};
-	return tokenNames[type];
 }
 
 void skipWhiteSpace(Lexer* lexer) {
@@ -165,12 +152,11 @@ Token nextToken(Lexer* lexer) {
 				readNumber(lexer, &token);
 				return token;
 			}
-			else
-			{
-				token.type = TokenTypeIllegal;
-				token.literal[0] = lexer->ch;
-				token.literal[1] = '\0';
-			}
+
+			token.type = TokenTypeIllegal;
+			token.literal[0] = lexer->ch;
+			token.literal[1] = '\0';
+			break;
 	}
 
 	readChar(lexer);
@@ -225,36 +211,6 @@ void readNumber(Lexer* lexer, Token* token) {
 
 bool isLetter(const char ch) {
 	return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch == '_');
-}
-
-//Get type based on literal
-static void getIdentType(Token* t) {
-
-	if (strcmp(t->literal, "let") == 0) {
-		t->type = TokenTypeLet;
-	}
-	else if (strcmp(t->literal, "fn") == 0) {
-		t->type = TokenTypeFunction;
-	}
-	else if (strcmp(t->literal, "true") == 0) {
-		t->type = TokenTypeTrue;
-	}
-	else if (strcmp(t->literal, "false") == 0) {
-		t->type = TokenTypeFalse;
-	}
-	else if (strcmp(t->literal, "if") == 0) {
-		t->type = TokenTypeIf;
-	}
-	else if (strcmp(t->literal, "else") == 0) {
-		t->type = TokenTypeElse;
-	}
-	else if (strcmp(t->literal, "return") == 0) {
-		t->type = TokenTypeReturn;
-	}
-	else
-	{
-		t->type = TokenTypeIdent;
-	}
 }
 
 char peekChar(const Lexer* lexer) {

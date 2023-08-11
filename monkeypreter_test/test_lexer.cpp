@@ -1,8 +1,10 @@
 #include "gtest/gtest.h"
 
 extern "C" {
-#include "lexer/lexer.h"
-#include "lexer/lexer.c"
+	#include "lexer/lexer.h"
+	#include "lexer/lexer.c"
+	#include "lexer/token.h"
+	#include "lexer/token.c"
 }
 
 TEST(TestLexer, TestNextToken_01) {
