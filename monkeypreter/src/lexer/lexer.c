@@ -2,6 +2,13 @@
 #include <ctype.h>
 #include <string.h>
 
+void readChar(Lexer* lexer);
+void readIdentifier(Lexer* lexer, Token* token);
+bool isLetter(char ch);
+void readNumber(Lexer* lexer, Token* token);
+char peekChar(const Lexer* lexer);
+void readString(Lexer* lexer, char* str);
+
 Lexer createLexer(const char* input)
 {
 	Lexer l = { input, strlen(input),-1, 0, input[0] };

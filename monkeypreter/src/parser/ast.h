@@ -20,9 +20,7 @@ enum StatementType {
     STMT_LET = 1,
     STMT_RETURN,
     STMT_EXPR,
-    STMT_BREAK,
-    STMT_CONTINUE,
-    STMT_ILLEGAL,
+    STMT_ILLEGAL
 };
 
 enum OperatorType {
@@ -32,44 +30,39 @@ enum OperatorType {
     OP_MULTIPLY,
     OP_DIVIDE,
     OP_GT,
-    OP_GTE,
     OP_LT,
-    OP_LTE,
     OP_EQ,
     OP_NOT_EQ,
     OP_NEGATE,
-    OP_AND,
-    OP_OR,
-    OP_MODULO,
 };
 
 struct PrefixExpression {
     Token token;
     enum OperatorType operatorType;
-    struct SExpression* right;
+    struct Expression* right;
 };
 
 struct InfixExpression {
     Token token;
-    struct SExpression* left;
+    struct Expression* left;
     enum OperatorType operatorType;
-    struct SExpression* right;
+    struct Expression* right;
 };
 
 struct IfExpression {
     Token token;
-    struct SExpression* condition;
+    struct Expression* condition;
     struct BlockStatement* consequence;
     struct BlockStatement* alternative;
 };
 
-typedef struct SIdentifier {
+struct Identifier {
 	Token token;
 	char value[MAX_IDENT_LENGTH];
-} Identifier;
+};
 
 struct IdentifierList {
-    Identifier* values;
+    struct Identifier* values;
     size_t size;
     size_t cap;
 };
@@ -81,14 +74,14 @@ struct FunctionLiteral {
 };
 
 struct ExpressionList {
-    struct SExpression** values;
+    struct Expression** values;
     size_t size;
     size_t cap;
 };
 
 struct CallExpression {
     Token token;
-    struct SExpression* function;
+    struct Expression* function;
     struct ExpressionList arguments;
 };
 
@@ -99,8 +92,8 @@ struct ArrayLiteral {
 
 struct IndexExpression {
     Token token;
-    struct SExpression* left;
-    struct SExpression* index;
+    struct Expression* left;
+    struct Expression* index;
 };
 
 struct HashLiteral {
@@ -108,14 +101,14 @@ struct HashLiteral {
     struct HashMap* pairs;
 };
 
-typedef struct SExpression {
+struct Expression {
     enum ExpressionType type;
 	Token token;
     union {
         int64_t integer;
         bool boolean;
         char string[MAX_IDENT_LENGTH];
-        Identifier ident;
+        struct Identifier ident;
         struct PrefixExpression prefix;
         struct InfixExpression infix;
         struct IfExpression ifelse;
@@ -124,24 +117,24 @@ typedef struct SExpression {
         struct ArrayLiteral array;
         struct IndexExpression indexExpr;
     };
-} Expression;
+};
 
-typedef struct SStatement {
+struct Statement {
     enum StatementType type;
 	Token token;
-	Identifier identifier;
-    Expression* expr;
-} Statement;
+	struct Identifier identifier;
+    struct Expression* expr;
+};
 
 struct BlockStatement {
     Token token;
     size_t cap;
     size_t size;
-    Statement* statements;
+    struct Statement* statements;
 };
 
-typedef struct SProgram {
-	Statement* statements;
+typedef struct Program {
+	struct Statement* statements;
     size_t cap;
 	size_t size;
 } Program;

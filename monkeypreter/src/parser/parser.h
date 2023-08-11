@@ -2,6 +2,17 @@
 #include "../lexer/lexer.h"
 #include "ast.h"
 
+enum Precedence {
+	LOWEST = 1,
+	EQUALS,         // ==
+	LESSGREATER,    // < or >
+	SUM,            // - and +
+	PRODUCT,        // * and /
+	PREFIX,         // - or !x
+	CALL,           // fn()
+	INDEX,			//arr[0]
+};
+
 typedef struct SParser {
 	Lexer* lexer;
 	Token curToken;
@@ -15,6 +26,6 @@ typedef struct SParser {
 } Parser;
 
 Parser createParser(Lexer* lexer);
-//Constructs AST, returns head
+//Constructs AST, returns head for eval phase 
 Program* parseProgram(Parser* parser);
 void freeParser(Parser* parser);

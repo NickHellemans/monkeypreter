@@ -14,9 +14,3 @@ typedef struct Lexer {
 
 Lexer createLexer(const char* input);
 Token nextToken(Lexer* lexer);
-void readChar(Lexer* lexer);
-void readIdentifier(Lexer* lexer, Token* token);
-bool isLetter(char ch);
-void readNumber(Lexer* lexer, Token* token);
-char peekChar(const Lexer* lexer);
-void readString(Lexer* lexer, char* str);	

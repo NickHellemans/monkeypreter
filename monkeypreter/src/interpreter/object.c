@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "builtins.h"
-#include "hash_map.h"
+#include "gc.h"
 
 struct Object NullObj = {
 	.type = OBJ_NULL
@@ -27,7 +27,7 @@ struct Object* nativeBoolToBoolObj(bool input) {
 		return &FalseObj;
 }
 
-struct Object* createObject(struct MonkeyGC* gc, ObjectType type) {
+struct Object* createObject(struct MonkeyGC* gc, enum ObjectType type) {
 	struct Object* obj = (struct Object*)malloc(sizeof *obj);
 	obj->type = type;
 	obj->mark = false;
@@ -223,7 +223,7 @@ struct Object* evalProgram(Program* program, struct ObjectEnvironment* env) {
 	return obj;
 }
 
-struct Object* evalStatement(Statement* stmt, struct ObjectEnvironment* env) {
+struct Object* evalStatement(struct Statement* stmt, struct ObjectEnvironment* env) {
 	struct Object* obj = &NullObj;
 
 	switch (stmt->type) {
@@ -258,7 +258,7 @@ struct Object* evalStatement(Statement* stmt, struct ObjectEnvironment* env) {
 	return obj;
 }
 
-struct Object* evalExpression(Expression* expr, struct ObjectEnvironment* env) {
+struct Object* evalExpression(struct Expression* expr, struct ObjectEnvironment* env) {
 	struct Object* obj = &NullObj;
 
 	switch (expr->type) {
@@ -504,7 +504,7 @@ struct Object* newEvalError(struct MonkeyGC* gc, const char* format, ...) {
 	return errorObj;
 }
 
-struct Object* evalIdentifier(Expression* expr, struct ObjectEnvironment* env) {
+struct Object* evalIdentifier(struct Expression* expr, struct ObjectEnvironment* env) {
 	struct Object* obj = environmentGet(env, expr->ident.value);
 	if(obj->type != OBJ_NULL) {
 		return obj;

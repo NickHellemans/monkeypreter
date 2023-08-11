@@ -150,7 +150,6 @@
     <ClInclude Include="src\lexer\token.h" />
     <ClInclude Include="src\parser\ast.h" />
     <ClInclude Include="src\repl.h" />
-    <ClInclude Include="src\util.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

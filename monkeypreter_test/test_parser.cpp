@@ -106,7 +106,7 @@ bool testInfixExpression(Expression* expr, ExpectedValue left, OperatorType op, 
 	return true;
 }
 
-bool testLetStatement(Statement stmt, const char* name) {
+bool testLetStatement(struct Statement stmt, const char* name) {
 	if (strcmp(stmt.token.literal, "let") != 0) {
 		printf("Token literal not 'let', got %s\n", stmt.token.literal);
 		return false;
@@ -178,7 +178,7 @@ TEST(TestParser, TestParser_01_let) {
 			FAIL();
 		}
 
-		Statement stmt = program->statements[0];
+		struct Statement stmt = program->statements[0];
 
 		if (!testLetStatement(stmt, letTests[i].expectedIdentifier)) {
 			printf("Test failed on statement: %d\n", i);
@@ -226,7 +226,7 @@ TEST(TestParser, TestParser_02_ret) {
 			FAIL();
 		}
 
-		Statement stmt = program->statements[0];
+		struct Statement stmt = program->statements[0];
 		if (stmt.type != STMT_RETURN) {
 			printf("Stmt not a return statement, got %d", stmt.type);
 			continue;
@@ -264,7 +264,7 @@ TEST(TestParser, TestParser_03_Ident) {
 		FAIL();
 	}
 
-	Statement stmt = program->statements[0];
+	struct Statement stmt = program->statements[0];
 	if (stmt.type != STMT_EXPR) {
 		printf("Stmt not a expression statement, got %d", stmt.type);
 		FAIL();
@@ -305,7 +305,7 @@ TEST(TestParser, TestParser_04_IntLiteral) {
 		FAIL();
 	}
 
-	Statement stmt = program->statements[0];
+	struct Statement stmt = program->statements[0];
 	if (stmt.type != STMT_EXPR) {
 		printf("Stmt not a expression statement, got %d\n", stmt.type);
 		FAIL();
@@ -359,7 +359,7 @@ TEST(TestParser, TestParser_05_PrefixExpr) {
 			FAIL();
 		}
 
-		Statement stmt = program->statements[0];
+		struct Statement stmt = program->statements[0];
 		if (stmt.type != STMT_EXPR) {
 			printf("Stmt not a expression statement, got %d\n", stmt.type);
 			FAIL();
@@ -421,7 +421,7 @@ TEST(TestParser, TestParser_06_InfixExpr) {
 			FAIL();
 		}
 
-		Statement stmt = program->statements[0];
+		struct Statement stmt = program->statements[0];
 		if (stmt.type != STMT_EXPR) {
 			printf("Stmt not a expression statement, got %d\n", stmt.type);
 			FAIL();
@@ -589,6 +589,10 @@ TEST(TestParser, TestParser_07_OperatorPrecedence) {
 		}
 		char* actual = programToStr(program);
 
+		if(!actual) {
+			FAIL();
+		}
+
 		if (strcmp(actual, precedenceTests[i].expected) != 0) {
 			printf("Expected %s, got %s", precedenceTests[i].expected, actual);
 			FAIL();
@@ -624,7 +628,7 @@ TEST(TestParser, TestParser_08_Bool) {
 			FAIL();
 		}
 
-		Statement stmt = program->statements[0];
+		struct Statement stmt = program->statements[0];
 		if (stmt.type != STMT_EXPR) {
 			printf("Stmt not a expression statement, got %d", stmt.type);
 			FAIL();
@@ -657,7 +661,7 @@ TEST(TestParser, TestParser_09_IfExpression) {
 		FAIL();
 	}
 
-	Statement stmt = program->statements[0];
+	struct Statement stmt = program->statements[0];
 	if (stmt.type != STMT_EXPR) {
 		printf("Stmt not a expression statement, got %d", stmt.type);
 		FAIL();
@@ -719,7 +723,7 @@ TEST(TestParser, TestParser_10_IfElseExpression) {
 		FAIL();
 	}
 
-	Statement stmt = program->statements[0];
+	struct Statement stmt = program->statements[0];
 	if (stmt.type != STMT_EXPR) {
 		printf("Stmt not a expression statement, got %d", stmt.type);
 		FAIL();
@@ -796,7 +800,7 @@ TEST(TestParser, TestParser_11_FunctionLiteral) {
 		FAIL();
 	}
 
-	Statement stmt = program->statements[0];
+	struct Statement stmt = program->statements[0];
 	if (stmt.type != STMT_EXPR) {
 		printf("Stmt not a expression statement, got %d", stmt.type);
 		FAIL();
@@ -871,7 +875,7 @@ TEST(TestParser, TestParser_12_FunctionParameters) {
 			FAIL();
 		}
 
-		Statement stmt = program->statements[0];
+		struct Statement stmt = program->statements[0];
 		FunctionLiteral fn = stmt.expr->function;
 
 		if (fn.parameters.size != tests[i].expectedSize) {
@@ -908,7 +912,7 @@ TEST(TestParser, TestParser_13_CallExpression) {
 		FAIL();
 	}
 
-	Statement stmt = program->statements[0];
+	struct Statement stmt = program->statements[0];
 	if (stmt.type != STMT_EXPR) {
 		printf("Stmt not a expression statement, got %d", stmt.type);
 		FAIL();
@@ -977,7 +981,7 @@ TEST(TestParser, TestParser_14_CallParameters) {
 			FAIL();
 		}
 
-		Statement stmt = program->statements[0];
+		struct Statement stmt = program->statements[0];
 		CallExpression call = stmt.expr->call;
 
 		if (call.arguments.size != tests[i].expectedSize) {
@@ -1015,7 +1019,7 @@ TEST(TestParser, TestParser_15_StringLiteral) {
 		FAIL();
 	}
 
-	Statement stmt = program->statements[0];
+	struct Statement stmt = program->statements[0];
 	Expression* literal = stmt.expr;
 
 	if (literal->type != EXPR_STRING) {
@@ -1051,7 +1055,7 @@ TEST(TestParser, TestParser_16_ArrayLiteral) {
 		FAIL();
 	}
 
-	Statement stmt = program->statements[0];
+	struct Statement stmt = program->statements[0];
 	Expression* array = stmt.expr;
 
 	if (array->type != EXPR_ARRAY) {
@@ -1097,7 +1101,7 @@ TEST(TestParser, TestParser_17_IndexExpressions) {
 		FAIL();
 	}
 
-	Statement stmt = program->statements[0];
+	struct Statement stmt = program->statements[0];
 	Expression* indexExpr = stmt.expr;
 
 	if (indexExpr->type != EXPR_INDEX) {

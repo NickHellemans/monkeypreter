@@ -5,6 +5,7 @@
 #include "parser/parser.h"
 #include "interpreter/object.h"
 #include "interpreter/environment.h"
+#include "interpreter/gc.h"
 
 const char* MONKEY_FACE = "            __,__\n\
    .--.  .-\"     \"-.  .--.\n\

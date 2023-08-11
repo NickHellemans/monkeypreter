@@ -5,24 +5,24 @@
 #define MAX_PROGRAM_LEN 1000000
 
 //Internal declarations
-void freeStatements(Statement* stmts, size_t size);
-void freeExpression(Expression* expr);
-void statementToStr(char* str, const Statement* stmt);
-
+void freeStatements(struct Statement* stmts, size_t size);
+void freeExpression(struct Expression* expr);
+void statementToStr(char* str, const struct Statement* stmt);
+void exprStatementToStr(char* str, struct Expression* expr);
 
 void freeProgram(Program* program) {
 	freeStatements(program->statements, program->size);
 	free(program);
 }
 
-void freeStatements(Statement* stmts, size_t size) {
+void freeStatements(struct Statement* stmts, size_t size) {
 	for(size_t i = 0; i < size; i++) {
 		freeExpression(stmts[i].expr);
 	}
 	free(stmts);
 }
 
-void freeExpression(Expression* expr) {
+void freeExpression(struct Expression* expr) {
 
 	if(!expr) {
 		return;
@@ -93,13 +93,13 @@ void freeBlockStatement(struct BlockStatement* bs) {
 	free(bs);
 }
 
-void exprStatementToStr(char* str, Expression* expr);
+
 
 char* programToStr(const Program* program) {
 	char* str = (char*) malloc(MAX_PROGRAM_LEN);
+
 	if (!str) {
-		int success = fprintf(stderr, "Value of errno: %d\n", errno);
-		perror("OUT OF MEMORY");
+		perror("malloc(programToStr) returned `NULL`");
 		return NULL;
 	}
 
@@ -113,7 +113,7 @@ char* programToStr(const Program* program) {
 	return str;
 }
 
-void letStatementToStr(char* str, const Statement* stmt) {
+void letStatementToStr(char* str, const struct Statement* stmt) {
 	strcat_s(str, MAX_PROGRAM_LEN, stmt->token.literal);
 	strcat_s(str, MAX_PROGRAM_LEN, " ");
 	strcat_s(str, MAX_PROGRAM_LEN, stmt->identifier.value);
@@ -122,7 +122,7 @@ void letStatementToStr(char* str, const Statement* stmt) {
 	strcat_s(str, MAX_PROGRAM_LEN, ";");
 }
 
-void retStatementToStr(char* str, const Statement* stmt) {
+void retStatementToStr(char* str, const struct Statement* stmt) {
 	strcat_s(str, MAX_PROGRAM_LEN, stmt->token.literal);
 	strcat_s(str, MAX_PROGRAM_LEN, " ");
 	exprStatementToStr(str, stmt->expr);
@@ -135,7 +135,7 @@ void blockStatementToStr(char* str, const struct BlockStatement* bs) {
 	}
 }
 
-void exprStatementToStr(char* str, Expression* expr) {
+void exprStatementToStr(char* str, struct Expression* expr) {
 	switch (expr->type) {
 		case EXPR_PREFIX:
 			strcat_s(str, MAX_PROGRAM_LEN, "(");
@@ -229,7 +229,7 @@ void exprStatementToStr(char* str, Expression* expr) {
 	}
 }
 
-void statementToStr(char* str, const Statement* stmt) {
+void statementToStr(char* str, const struct Statement* stmt) {
 
 	switch (stmt->type) {
 		case STMT_LET:
@@ -241,7 +241,6 @@ void statementToStr(char* str, const Statement* stmt) {
 		case STMT_EXPR:
 			exprStatementToStr(str, stmt->expr);
 			break;
-		default: break;
 	}
 }
 

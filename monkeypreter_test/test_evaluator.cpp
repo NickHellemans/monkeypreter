@@ -353,7 +353,12 @@ TEST(TestEval, TestEval_08_FunctionObject) {
 
 	char expectedBody[] = "(x + 2)";
 
-	char* body = (char*)malloc(MAX_PROGRAM_LEN);
+	char* body = (char*) malloc(MAX_PROGRAM_LEN);
+	if(!body) {
+		perror("malloc (test function body) returned `NULL`\n");
+		FAIL();
+	}
+
 	body[0] = '\0';
 	blockStatementToStr(body, func.body);
 
