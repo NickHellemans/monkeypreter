@@ -82,8 +82,10 @@ Parser createParser(Lexer* lexer) {
 
 void freeParser(Parser* parser) {
 
-	if (parser->errorsLen <= 0)
+	if (parser->errorsLen <= 0) {
+		free(parser->errors);
 		return;
+	}
 
 	for (size_t i = 0; i < parser->errorsLen; i++) {
 		free(parser->errors[i]);

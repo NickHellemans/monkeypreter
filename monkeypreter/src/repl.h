@@ -5,6 +5,7 @@
 #include "parser/parser.h"
 #include "evaluator/object.h"
 #include "evaluator/environment.h"
+#include "evaluator/evaluator.h"
 #include "evaluator/gc.h"
 
 const char* MONKEY_FACE = "            __,__\n\
@@ -53,6 +54,8 @@ inline void repl(void) {
 
 		if (strncmp(inputBuffer, "exit", 4) == 0) {
 			printf("Done with monkey business...\nExiting REPL...\n");
+			freeProgram(program);
+			freeParser(&parser);
 			break;
 		}
 

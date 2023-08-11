@@ -26,10 +26,12 @@ struct MonkeyGC* createMonkeyGC(void) {
 void deleteMonkeyGC(struct MonkeyGC* gc) {
 
 	int counter = 0;
-	if (gc->size <= 0)
+	if (gc->size <= 0) {
+		free(gc);
 		return;
+	}
 
-	struct Object* curr = gc->head->next;
+	struct Object* curr = gc->head;
 	while(curr != NULL) {
 		struct Object* trash = curr;
 		curr = curr->next;
@@ -124,7 +126,6 @@ size_t sweepMonkeyGc(struct MonkeyGC* gc) {
 			freeObject(trash);
 			gc->size--;
 			garbageCounter++;
-			
 		}
 		//Reached: unmark for next mark phase
 		else {
