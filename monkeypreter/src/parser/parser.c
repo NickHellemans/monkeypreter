@@ -328,7 +328,7 @@ struct Expression* parseIntegerLiteralExpr(Parser* parser) {
 	const char* s = expr->token.literal;
 	//Cast to int from string
 	for (int i = 0; s[i] != '\0'; i++) {
-		expr->integer = expr->integer * 10 + (s[i] - 48);
+		expr->integer = expr->integer * 10 + ((int64_t)s[i] - 48);
 	}
 	return expr;
 }

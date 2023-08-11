@@ -130,10 +130,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="monkeypreter.c" />
-    <ClCompile Include="src\interpreter\environment.c" />
-    <ClCompile Include="src\interpreter\gc.c" />
-    <ClCompile Include="src\interpreter\hash_map.c" />
-    <ClCompile Include="src\interpreter\object.c" />
+    <ClCompile Include="src\evaluator\builtins.c" />
+    <ClCompile Include="src\evaluator\environment.c" />
+    <ClCompile Include="src\evaluator\evaluator.c" />
+    <ClCompile Include="src\evaluator\gc.c" />
+    <ClCompile Include="src\evaluator\hash_map.c" />
+    <ClCompile Include="src\evaluator\object.c" />
     <ClCompile Include="src\lexer\lexer.c" />
     <ClCompile Include="src\lexer\token.c" />
     <ClCompile Include="src\parser\ast.c" />
@@ -141,11 +143,12 @@
     <ClCompile Include="src\parser\parser.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\interpreter\builtins.h" />
-    <ClInclude Include="src\interpreter\environment.h" />
-    <ClInclude Include="src\interpreter\gc.h" />
-    <ClInclude Include="src\interpreter\hash_map.h" />
-    <ClInclude Include="src\interpreter\object.h" />
+    <ClInclude Include="src\evaluator\builtins.h" />
+    <ClInclude Include="src\evaluator\environment.h" />
+    <ClInclude Include="src\evaluator\evaluator.h" />
+    <ClInclude Include="src\evaluator\gc.h" />
+    <ClInclude Include="src\evaluator\hash_map.h" />
+    <ClInclude Include="src\evaluator\object.h" />
     <ClInclude Include="src\lexer\lexer.h" />
     <ClInclude Include="src\lexer\token.h" />
     <ClInclude Include="src\parser\ast.h" />

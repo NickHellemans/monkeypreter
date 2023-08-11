@@ -30,19 +30,25 @@
     <ClCompile Include="src\parser\ast.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\interpreter\object.c">
+    <ClCompile Include="src\evaluator\object.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\interpreter\hash_map.c">
+    <ClCompile Include="src\evaluator\hash_map.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\interpreter\environment.c">
+    <ClCompile Include="src\evaluator\environment.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\interpreter\gc.c">
+    <ClCompile Include="src\evaluator\gc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\lexer\token.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\evaluator\builtins.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\evaluator\evaluator.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -56,22 +62,25 @@
     <ClInclude Include="src\parser\ast.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\interpreter\object.h">
+    <ClInclude Include="src\evaluator\object.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\interpreter\hash_map.h">
+    <ClInclude Include="src\evaluator\hash_map.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\interpreter\environment.h">
+    <ClInclude Include="src\evaluator\environment.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\interpreter\builtins.h">
+    <ClInclude Include="src\evaluator\builtins.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\interpreter\gc.h">
+    <ClInclude Include="src\evaluator\gc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\lexer\token.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\evaluator\evaluator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

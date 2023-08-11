@@ -3,9 +3,9 @@
 #include <string.h>
 #include "lexer/lexer.h"
 #include "parser/parser.h"
-#include "interpreter/object.h"
-#include "interpreter/environment.h"
-#include "interpreter/gc.h"
+#include "evaluator/object.h"
+#include "evaluator/environment.h"
+#include "evaluator/gc.h"
 
 const char* MONKEY_FACE = "            __,__\n\
    .--.  .-\"     \"-.  .--.\n\

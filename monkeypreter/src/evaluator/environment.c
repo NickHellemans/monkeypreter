@@ -1,11 +1,13 @@
 #include "environment.h"
-
 #include <stdio.h>
-
 #include "hash_map.h"
 
 struct ObjectEnvironment* newEnvironment(struct MonkeyGC* gc) {
 	struct ObjectEnvironment* env = (struct ObjectEnvironment*)malloc(sizeof * env);
+	if (!env) {
+		perror("malloc (create env) returned `NULL`\n");
+		exit(EXIT_FAILURE);
+	}
 	env->store = createHashMap(17);
 	env->outer = NULL;
 	env->gc = gc;
@@ -32,24 +34,11 @@ struct Object* environmentGet(struct ObjectEnvironment* env, char* key) {
 }
 
 struct Object* environmentSet(struct ObjectEnvironment* env, char* key, struct Object* data) {
-	//printf("Added `%s` to env\n", key);
 	insertIntoHashMap(env->store, key, data);
 	return data;
 }
 
 void deleteEnvironment(struct ObjectEnvironment* env) {
 	destroyHashMap(env->store);
-	free(env);
-}
-
-void deleteAllEnvironment(struct ObjectEnvironment* env) {
-	destroyHashMap(env->store);
-	struct ObjectEnvironment* currEnv = env->outer;
-	while (currEnv != NULL) {
-		struct ObjectEnvironment* trash = currEnv;
-		currEnv = currEnv->outer;
-		destroyHashMap(trash->store);
-		free(trash);
-	}
 	free(env);
 }

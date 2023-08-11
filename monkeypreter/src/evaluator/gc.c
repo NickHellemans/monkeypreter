@@ -5,9 +5,17 @@
 //Enable - Disable GC logging
 //#define LOG_GC 
 
+void markMonkeyObjectEnvironment(struct ObjectEnvironment* env);
+size_t sweepMonkeyGc(struct MonkeyGC* gc);
 
 struct MonkeyGC* createMonkeyGC(void) {
 	struct MonkeyGC* gc = (struct MonkeyGC*) malloc(sizeof * gc);
+
+	if(!gc) {
+		perror("malloc (create gc) returned `NULL`");
+		exit(EXIT_FAILURE);
+	}
+
 	gc->head = NULL;
 	gc->size = 0;
 	//Trigger GC after 100 objects

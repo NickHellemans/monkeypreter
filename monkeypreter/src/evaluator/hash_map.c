@@ -1,8 +1,13 @@
 #include "hash_map.h"
 #include <string.h>
 
-//String hash
-uint32_t hash(const char* key)
+static uint32_t getIndex(struct HashMap* hm, const char* key);
+static double loadFactor(struct HashMap* hm);
+static void rehash(struct HashMap* hm);
+static void clear(struct HashMap* hm);
+
+//String hashString
+uint32_t hashString(const char* key)
 {
 	uint32_t hash = 0;
 	for (int i = 0; key[i] != '\0'; i++)
@@ -12,19 +17,27 @@ uint32_t hash(const char* key)
 	return hash;
 }
 
-static uint32_t getIndex(struct HashMap* hm, const char* key);
-static double loadFactor(struct HashMap* hm);
-static void rehash(struct HashMap* hm);
-static void clear(struct HashMap* hm);
 
 struct HashMap* createHashMap(uint32_t cap) {
 
 	struct HashMap* hm = (struct HashMap*)malloc(sizeof * hm);
+
+	if(!hm) {
+		perror("malloc (create hashmap) returned `NULL`\n");
+		exit(EXIT_FAILURE);
+	}
+
 	hm->size = 0;
 	hm->cap = cap;
 	//hm->keyType = keyType;
 	//hm->dataType = dataType;
 	hm->elems = (struct HashNode**)calloc(cap, sizeof(struct HashNode*));
+
+	if (!hm) {
+		perror("calloc (create hashmap elems) returned `NULL`\n");
+		free(hm);
+		exit(EXIT_FAILURE);
+	}
 	return hm;
 }
 
@@ -34,7 +47,6 @@ void destroyHashMap(struct HashMap* hm) {
 	free(hm);
 }
 
-//bool insertIntoHashMap(struct HashMap* hm, const char* key, struct Object data) {
 bool insertIntoHashMap(struct HashMap* hm, const char* key, void* data) {
 
 	if (key == NULL || hm == NULL || hashMapContains(hm, key)) return false;
@@ -42,7 +54,12 @@ bool insertIntoHashMap(struct HashMap* hm, const char* key, void* data) {
 
 	//Create new node
 	struct HashNode* node = (struct HashNode*)malloc(sizeof * node);
-	strcpy_s(node->key, MAX_KEY_LEN, key);
+	if (!node) {
+		perror("malloc (insert hashmap node) returned `NULL`\n");
+		exit(EXIT_FAILURE);
+	}
+
+	strcpy_s(node->key, MAX_IDENT_LENGTH, key);
 	node->data = data;
 
 	//Insert at head of bucket with hashed index
@@ -74,8 +91,6 @@ bool hashMapContains(struct HashMap* hm, const char* key) {
 }
 void* lookupKeyInHashMap(struct HashMap* hm, const char* key) {
 
-	//struct Object* obj = &NullObj;
-
 	if (key == NULL || hm == NULL || !hashMapContains(hm, key)) return NULL;
 
 	uint32_t index = getIndex(hm, key);
@@ -105,6 +120,9 @@ bool deleteKeyFromHashMap(struct HashMap* hm, const char* key) {
 		curr = curr->next;
 	}
 
+	if (!curr)
+		return false;
+
 	//Deleting head
 	if(prev == NULL) {
 		hm->elems[index] = curr->next;
@@ -119,7 +137,7 @@ bool deleteKeyFromHashMap(struct HashMap* hm, const char* key) {
 }
 
 static uint32_t getIndex(struct HashMap* hm, const char* key) {
-	return hash(key) % hm->cap;
+	return hashString(key) % hm->cap;
 }
 
 static double loadFactor(struct HashMap* hm) {
@@ -132,6 +150,11 @@ static void rehash(struct HashMap* hm)
 	struct HashNode** oldTable = hm->elems;
 	hm->cap *= 2;
 	hm->elems = (struct HashNode**)calloc(hm->cap, sizeof(struct HashNode*));
+
+	if (!hm->elems) {
+		perror("calloc (rehash hashmap) returned `NULL` - Abort rehash...\n");
+		return;
+	}
 
 	for (uint32_t i = 0; i < oldCapacity; i++)
 	{
