@@ -49,8 +49,24 @@ void destroyHashMap(struct HashMap* hm) {
 
 bool insertIntoHashMap(struct HashMap* hm, const char* key, void* data) {
 
-	if (key == NULL || hm == NULL || hashMapContains(hm, key)) return false;
+	//if (key == NULL || hm == NULL || hashMapContains(hm, key)) return false;
+	if (key == NULL || hm == NULL) return false;
+
 	const uint32_t index = getIndex(hm, key);
+
+	//Rebind value
+	if(hashMapContains(hm, key)) {
+		struct HashNode* curr = hm->elems[index];
+
+		while (curr != NULL) {
+			if (strcmp(curr->key, key) == 0) {
+				//free object or not? gc can handle it
+				curr->data = data;
+				return true;
+			}
+			curr = curr->next;
+		}
+	}
 
 	//Create new node
 	struct HashNode* node = (struct HashNode*)malloc(sizeof * node);

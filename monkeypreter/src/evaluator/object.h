@@ -41,7 +41,7 @@ union ObjectVal {
 	struct ErrorObject error;
 	struct FunctionObject function;
 	//Builtin fn pointer that returns object
-	struct Object* (*builtin) (struct ObjectList args, struct MonkeyGC* gc);
+	struct Object* (*builtin) (struct ObjectList* args, struct MonkeyGC* gc);
 	//Array
 	struct ObjectList arr;
 };

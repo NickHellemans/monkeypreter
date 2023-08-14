@@ -5,15 +5,15 @@
 
 struct BuiltinFunction {
 	char name[MAX_IDENT_LENGTH];
-	struct Object* (*builtin) (struct ObjectList args, struct MonkeyGC* gc);
+	struct Object* (*builtin) (struct ObjectList* args, struct MonkeyGC* gc);
 };
 
-struct Object* len(struct ObjectList args, struct MonkeyGC* gc) {
-	if (args.size != 1) {
-		return newEvalError(gc, "wrong number of arguments. got=%d, want=1", args.size);
+struct Object* len(struct ObjectList* args, struct MonkeyGC* gc) {
+	if (args->size != 1) {
+		return newEvalError(gc, "wrong number of arguments. got=%d, want=1", args->size);
 	}
 
-	struct Object* arg = args.objects[0];
+	struct Object* arg = args->objects[0];
 
 	struct Object* obj;
 	if (arg->type == OBJ_STRING) {
@@ -31,12 +31,12 @@ struct Object* len(struct ObjectList args, struct MonkeyGC* gc) {
 	return newEvalError(gc, "argument to `len` not supported, got %s", objectTypeToStr(arg->type));
 }
 
-struct Object* first(struct ObjectList args, struct MonkeyGC* gc) {
-	if (args.size != 1) {
-		return newEvalError(gc, "wrong number of arguments. got=%d, want=1", args.size);
+struct Object* first(struct ObjectList* args, struct MonkeyGC* gc) {
+	if (args->size != 1) {
+		return newEvalError(gc, "wrong number of arguments. got=%d, want=1", args->size);
 	}
 
-	struct Object* arg = args.objects[0];
+	struct Object* arg = args->objects[0];
 
 	if (arg->type != OBJ_ARRAY) {
 		return newEvalError(gc, "argument to `first` must be ARRAY, got %s", objectTypeToStr(arg->type));
@@ -49,13 +49,13 @@ struct Object* first(struct ObjectList args, struct MonkeyGC* gc) {
 	return &NullObj;
 }
 
-struct Object* last(struct ObjectList args, struct MonkeyGC* gc) {
-	const size_t argSize = args.size;
+struct Object* last(struct ObjectList* args, struct MonkeyGC* gc) {
+	const size_t argSize = args->size;
 	if (argSize != 1) {
 		return newEvalError(gc, "wrong number of arguments. got=%d, want=1", argSize);
 	}
 
-	struct Object* arg = args.objects[0];
+	struct Object* arg = args->objects[0];
 
 	if (arg->type != OBJ_ARRAY) {
 		return newEvalError(gc, "argument to `last` must be ARRAY, got %s", objectTypeToStr(arg->type));
@@ -70,13 +70,13 @@ struct Object* last(struct ObjectList args, struct MonkeyGC* gc) {
 	return &NullObj;
 }
 
-struct Object* cdr(struct ObjectList args, struct MonkeyGC* gc) {
-	const size_t argSize = args.size;
+struct Object* cdr(struct ObjectList* args, struct MonkeyGC* gc) {
+	const size_t argSize = args->size;
 	if (argSize != 1) {
 		return newEvalError(gc, "wrong number of arguments. got=%d, want=1", argSize);
 	}
 
-	struct Object* arg = args.objects[0];
+	struct Object* arg = args->objects[0];
 
 	if (arg->type != OBJ_ARRAY) {
 		return newEvalError(gc, "argument to `cdr` must be ARRAY, got %s", objectTypeToStr(arg->type));
@@ -107,17 +107,17 @@ struct Object* cdr(struct ObjectList args, struct MonkeyGC* gc) {
 	return &NullObj;
 }
 
-struct Object* push(struct ObjectList args, struct MonkeyGC* gc) {
-	const size_t argSize = args.size;
+struct Object* push(struct ObjectList* args, struct MonkeyGC* gc) {
+	const size_t argSize = args->size;
 	if (argSize != 2) {
 		return newEvalError(gc, "wrong number of arguments. got=%d, want=2", argSize);
 	}
 
-	if (args.objects[0]->type != OBJ_ARRAY) {
-		return newEvalError(gc, "argument to `push` must be ARRAY, got %s", objectTypeToStr(args.objects[0]->type));
+	if (args->objects[0]->type != OBJ_ARRAY) {
+		return newEvalError(gc, "argument to `push` must be ARRAY, got %s", objectTypeToStr(args->objects[0]->type));
 	}
-	struct Object* arr = args.objects[0];
-	struct Object* objToAdd = args.objects[1];
+	struct Object* arr = args->objects[0];
+	struct Object* objToAdd = args->objects[1];
 
 	const size_t arrSize = arr->value.arr.size;
 	const size_t arrCap = arr->value.arr.cap;
@@ -142,10 +142,10 @@ struct Object* push(struct ObjectList args, struct MonkeyGC* gc) {
 	return obj;
 }
 
-struct Object* print(struct ObjectList args, struct MonkeyGC* gc) {
+struct Object* print(struct ObjectList* args, struct MonkeyGC* gc) {
 
-	for (size_t i = 0; i < args.size; i++) {
-		printf("%s", inspectObject(args.objects[i]));
+	for (size_t i = 0; i < args->size; i++) {
+		printf("%s", inspectObject(args->objects[i]));
 	}
 
 	return &NullObj;

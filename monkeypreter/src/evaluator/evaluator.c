@@ -13,12 +13,12 @@ struct Object* evalBangOperatorExpression(struct Object* right);
 struct Object* evalMinusPrefixExpression(struct Object* right, struct MonkeyGC* gc);
 struct Object* evalInfixExpression(enum OperatorType op, struct Object* left, struct Object* right, struct MonkeyGC* gc);
 struct Object* evalIntegerInfixExpression(enum OperatorType op, struct Object* left, struct Object* right, struct MonkeyGC* gc);
-struct Object* evalIfExpression(struct IfExpression expr, struct ObjectEnvironment* env);
+struct Object* evalIfExpression(struct IfExpression* expr, struct ObjectEnvironment* env);
 struct Object* evalBlockStatement(struct BlockStatement* bs, struct ObjectEnvironment* env);
 struct Object* evalIdentifier(struct Expression* expr, struct ObjectEnvironment* env);
-struct ObjectList evalExpressions(struct ExpressionList expressions, struct ObjectEnvironment* env);
-struct Object* applyFunction(struct Object* fn, struct ObjectList args, struct MonkeyGC* gc);
-struct ObjectEnvironment* extendFunctionEnv(struct Object* fn, struct ObjectList args);
+struct ObjectList evalExpressions(const struct ExpressionList* expressions, struct ObjectEnvironment* env);
+struct Object* applyFunction(struct Object* fn, struct ObjectList* args, struct MonkeyGC* gc);
+struct ObjectEnvironment* extendFunctionEnv(struct Object* fn, struct ObjectList* args);
 struct Object* unwrapReturnValue(struct Object* obj);
 struct Object* evalStringInfixExpression(enum OperatorType op, struct Object* left, struct Object* right, struct MonkeyGC* gc);
 struct Object* evalIndexExpression(struct Object* left, struct Object* index, struct MonkeyGC* gc);
@@ -144,7 +144,7 @@ struct Object* evalExpression(struct Expression* expr, struct ObjectEnvironment*
 	}
 
 	case EXPR_IF:
-		return evalIfExpression(expr->ifelse, env);
+		return evalIfExpression(&(expr->ifelse), env);
 
 	case EXPR_IDENT:
 		return evalIdentifier(expr, env);
@@ -160,21 +160,21 @@ struct Object* evalExpression(struct Expression* expr, struct ObjectEnvironment*
 	case EXPR_CALL: {
 
 		struct Object* calledFunc = evalExpression(expr->call.function, env);
-		printf("Calling fn ( %s ) \n", inspectObject(calledFunc));
+		//printf("Calling fn ( %s ) \n", inspectObject(calledFunc));
 		if (isError(calledFunc)) {
 			return calledFunc;
 		}
 
 		//Evaluate parameter expr
-		struct ObjectList args = evalExpressions(expr->call.arguments, env);
+		struct ObjectList args = evalExpressions(&(expr->call.arguments), env);
 		if (args.size == 1 && isError(args.objects[0])) {
 			return args.objects[0];
 		}
 
-		printf("Args evaluated %llu\n", args.size);
+		//printf("Args evaluated %llu\n", args.size);
 
 		//Apply function with args
-		return applyFunction(calledFunc, args, env->gc);
+		return applyFunction(calledFunc, &args, env->gc);
 	}
 
 	case EXPR_STRING:
@@ -184,7 +184,7 @@ struct Object* evalExpression(struct Expression* expr, struct ObjectEnvironment*
 
 	case EXPR_ARRAY:
 		obj = createObject(env->gc, OBJ_ARRAY);
-		struct ObjectList elements = evalExpressions(expr->array.elements, env);
+		struct ObjectList elements = evalExpressions(&(expr->array.elements), env);
 
 		if (elements.size == 1 && isError(elements.objects[0])) {
 			return elements.objects[0];
@@ -313,19 +313,19 @@ struct Object* evalIntegerInfixExpression(enum OperatorType op, struct Object* l
 	return obj;
 }
 
-struct Object* evalIfExpression(struct IfExpression expr, struct ObjectEnvironment* env) {
-	struct Object* condition = evalExpression(expr.condition, env);
+struct Object* evalIfExpression(struct IfExpression* expr, struct ObjectEnvironment* env) {
+	struct Object* condition = evalExpression(expr->condition, env);
 
 	if (isError(condition)) {
 		return condition;
 	}
 
 	if (isTruthy(condition)) {
-		return evalBlockStatement(expr.consequence, env);
+		return evalBlockStatement(expr->consequence, env);
 	}
 
-	if (expr.alternative) {
-		return evalBlockStatement(expr.alternative, env);
+	if (expr->alternative) {
+		return evalBlockStatement(expr->alternative, env);
 	}
 
 	return &NullObj;
@@ -369,14 +369,14 @@ struct Object* evalIdentifier(struct Expression* expr, struct ObjectEnvironment*
 	return newEvalError(env->gc, "identifier not found: %s", expr->ident.value);
 }
 
-struct ObjectList evalExpressions(struct ExpressionList expressions, struct ObjectEnvironment* env) {
+struct ObjectList evalExpressions(const struct ExpressionList* expressions, struct ObjectEnvironment* env) {
 	struct ObjectList args;
 	args.size = 0;
-	args.cap = expressions.size;
+	args.cap = expressions->size;
 	args.objects = (struct Object**)malloc(args.cap * sizeof(struct Object*));
 
-	for (size_t i = 0; i < expressions.size; i++) {
-		struct Object* evaluated = evalExpression(expressions.values[i], env);
+	for (size_t i = 0; i < expressions->size; i++) {
+		struct Object* evaluated = evalExpression(expressions->values[i], env);
 		if (isError(evaluated)) {
 			args.size = 1;
 			args.objects[0] = evaluated;
@@ -400,7 +400,7 @@ struct ObjectList evalExpressions(struct ExpressionList expressions, struct Obje
 	return args;
 }
 
-struct Object* applyFunction(struct Object* fn, struct ObjectList args, struct MonkeyGC* gc) {
+struct Object* applyFunction(struct Object* fn, struct ObjectList* args, struct MonkeyGC* gc) {
 
 	if (fn->type == OBJ_FUNCTION) {
 		struct ObjectEnvironment* extendedEnv = extendFunctionEnv(fn, args);
@@ -419,12 +419,12 @@ struct Object* applyFunction(struct Object* fn, struct ObjectList args, struct M
 	return newEvalError(gc, "not a function: %s", objectTypeToStr(fn->type));
 }
 
-struct ObjectEnvironment* extendFunctionEnv(struct Object* fn, struct ObjectList args) {
+struct ObjectEnvironment* extendFunctionEnv(struct Object* fn, struct ObjectList* args) {
 
 	struct ObjectEnvironment* env = newEnclosedEnvironment(fn->value.function.env);
 
 	for (size_t i = 0; i < fn->value.function.parameters.size; i++) {
-		environmentSet(env, fn->value.function.parameters.values[i].value, args.objects[i]);
+		environmentSet(env, fn->value.function.parameters.values[i].value, args->objects[i]);
 	}
 	return env;
 }
