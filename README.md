@@ -1,7 +1,7 @@
 # Monkeypreter
 
 This repository is the result of going through the amazing book [Writing An Interpreter In Go](https://interpreterbook.com/) by Thorsten Ball, but using a different implementation language to challenge myself to truely understand what's going on. Following the book I implemented the Monkey programming language as a tree-walking 
-interpreter, using the language of all languages C. The interpreter comes with it's own mark & sweep garbage collector to take the trash out. 
+interpreter in C. The interpreter also comes with it's own mark & sweep garbage collector to take the trash out. 
 
 <p align="center" width="100%">
 <img src="https://monkeylang.org/images/logo.png" width="120" height="120"/>
